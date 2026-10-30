@@ -5,4 +5,4 @@ Registro de las decisiones importantes del proyecto. Cada decisión va en [decis
 Documentos relacionados:
 
 - [../PROPUESTA.md](../PROPUESTA.md): diseño general del sistema.
-- [../ACCIONES.md](../ACCIONES.md): las 30 acciones elegidas y el criterio.
+- [ACCIONES.md](ACCIONES.md): las 30 acciones elegidas y el criterio.

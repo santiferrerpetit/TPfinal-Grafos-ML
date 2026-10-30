@@ -1,6 +1,6 @@
 # Acciones elegidas
 
-30 acciones del S&P 500 más el índice (`^GSPC`) para calcular beta y volatilidad de mercado.
+30 acciones del S&P 500 más el ETF `SPY` (que replica el S&P 500) para calcular beta y volatilidad de mercado.
 
 ## Criterio
 
@@ -15,14 +15,14 @@
 |---|---|---|
 | Tecnología | AAPL, MSFT, NVDA | Núcleo del mercado, muy correlacionadas. NVDA tiene beta y volatilidad altas. |
 | Comunicaciones | GOOGL, VZ | Una growth y una defensiva en el mismo sector. |
-| Consumo discrecional | AMZN, HD, MCD, TSLA | Sensibles al ciclo. TSLA es muy idiosincrática. |
-| Consumo básico | KO, PG, WMT | Defensivas, beta baja. |
+| Consumo Secundario | AMZN, HD, MCD, TSLA | Sensibles al ciclo. TSLA es muy idiosincrática. |
+| Consumo Primario | KO, PG, WMT | Defensivas, beta baja. |
 | Salud | JNJ, PFE, UNH | Poco ligadas al ciclo económico. |
 | Financiero | JPM, BAC, GS | Muy correlacionadas entre sí, sensibles a tasas. |
 | Energía | XOM, CVX, COP | Siguen al petróleo y se desacoplan del resto en 2015-16 y 2020. |
 | Industriales | CAT, BA, UNP | Cíclicas. BA tiene shocks propios (2019-20). |
 | Materiales | NEM, FCX | NEM (oro) actúa como refugio, FCX (cobre) es muy cíclica. |
-| Utilities | NEE, DUK | Defensivas, sensibles a tasas. |
+| Servicios Publicos | NEE, DUK | Defensivas, sensibles a tasas. |
 | Inmobiliario | AMT, PLD | Sensibles a tasas. |
 
 ## Pares de referencia

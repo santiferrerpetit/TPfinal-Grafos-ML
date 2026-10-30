@@ -15,7 +15,7 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 
 ## 3. Universo de acciones
 
-- **Decisión:** 30 acciones del S&P 500 más `^GSPC` como índice de mercado. Lista y criterio en [../ACCIONES.md](../ACCIONES.md).
+- **Decisión:** 30 acciones del S&P 500 más `SPY` como referencia de mercado. Lista y criterio en [ACCIONES.md](ACCIONES.md).
 - **Por qué:** cubre los 11 sectores y mezcla pares muy correlacionados con pares casi independientes, para que el modelo vea todo el rango de correlaciones.
 
 ## 4. Sectores
@@ -25,7 +25,7 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 
 ## 5. Cálculo de features
 
-- **Decisión:** beta con regresión rodante contra `^GSPC`; todas las features usan solo retornos con fecha ≤ `fecha_corte`. Solo `corr_futura_60d` usa los 60 días siguientes.
+- **Decisión:** beta con regresión rodante contra `SPY`; todas las features usan solo retornos con fecha ≤ `fecha_corte`. Solo `corr_futura_60d` usa los 60 días siguientes.
 - **Por qué:** el `beta` de `.info` es un valor actual y usarlo en fechas pasadas filtraría información del futuro.
 
 ## 6. Evaluación del modelo
@@ -47,3 +47,15 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 
 - **Decisión:** `CLAUDE.md` y `.claude/` están en `.gitignore`. Los documentos del proyecto (como esta carpeta) sí se suben.
 - **Por qué:** son archivos de trabajo personales, no parte de la entrega.
+
+## 10. Índice de mercado para el beta (reemplazada por la 11)
+
+- **Decisión:** usar `^GSPC` (S&P 500) como índice de mercado para calcular el beta de cada acción y la `volatilidad_mercado`.
+- **Por qué:** el beta es la pendiente de regresar los retornos de la acción contra los del mercado, y el S&P 500 es el estándar. Las 30 acciones son del S&P 500, así que el índice las representa bien.
+- **Cómo:** se descarga junto con las acciones y se alinean las fechas. El beta es rodante y usa solo retornos con fecha ≤ `fecha_corte` (ver decisión 5).
+
+## 11. SPY en lugar de ^GSPC
+
+- **Decisión:** usar `SPY` (ETF que replica el S&P 500) como referencia de mercado para el beta y la `volatilidad_mercado`. Reemplaza a `^GSPC` de la decisión 10; las decisiones 3 y 5 ya están actualizadas.
+- **Por qué:** es un instrumento más conocido para el equipo. Los retornos de `SPY` y de `^GSPC` son prácticamente idénticos (correlación mayor a 0,99), así que el beta y la volatilidad casi no cambian.
+- **Nota:** con `auto_adjust=True` el precio de `SPY` incluye dividendos, mientras que `^GSPC` es solo de precio. La diferencia es pequeña y no afecta el uso que le damos.

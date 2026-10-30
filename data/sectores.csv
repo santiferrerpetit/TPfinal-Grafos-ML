@@ -1,0 +1,31 @@
+ticker,sector
+AAPL,Tecnología
+MSFT,Tecnología
+NVDA,Tecnología
+GOOGL,Comunicaciones
+VZ,Comunicaciones
+AMZN,Consumo Secundario
+HD,Consumo Secundario
+MCD,Consumo Secundario
+TSLA,Consumo Secundario
+KO,Consumo Primario
+PG,Consumo Primario
+WMT,Consumo Primario
+JNJ,Salud
+PFE,Salud
+UNH,Salud
+JPM,Financiero
+BAC,Financiero
+GS,Financiero
+XOM,Energía
+CVX,Energía
+COP,Energía
+CAT,Industriales
+BA,Industriales
+UNP,Industriales
+NEM,Materiales
+FCX,Materiales
+NEE,Servicios Publicos
+DUK,Servicios Publicos
+AMT,Inmobiliario
+PLD,Inmobiliario
