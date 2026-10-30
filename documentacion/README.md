@@ -6,3 +6,4 @@ Documentos relacionados:
 
 - [../PROPUESTA.md](../PROPUESTA.md): diseño general del sistema.
 - [ACCIONES.md](ACCIONES.md): las 30 acciones elegidas y el criterio.
+- [preguntas-informe.md](preguntas-informe.md): preguntas y respuestas en lenguaje simple, como borrador del informe y la defensa.

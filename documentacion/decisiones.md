@@ -59,3 +59,47 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 - **Decisión:** usar `SPY` (ETF que replica el S&P 500) como referencia de mercado para el beta y la `volatilidad_mercado`. Reemplaza a `^GSPC` de la decisión 10; las decisiones 3 y 5 ya están actualizadas.
 - **Por qué:** es un instrumento más conocido para el equipo. Los retornos de `SPY` y de `^GSPC` son prácticamente idénticos (correlación mayor a 0,99), así que el beta y la volatilidad casi no cambian.
 - **Nota:** con `auto_adjust=True` el precio de `SPY` incluye dividendos, mientras que `^GSPC` es solo de precio. La diferencia es pequeña y no afecta el uso que le damos.
+
+## 12. Período y campos descargados
+
+- **Decisión:** descargar del 2014-01-01 al 2024-01-01 (2516 días hábiles, 2014-01-02 a 2023-12-29) y guardar solo el precio de cierre ajustado (`Close` con `auto_adjust=True`). El script es `backend/scripts/descargar_precios.py`.
+- **Por qué:** 10 años alcanzan para tener unas 50 mil filas en el dataset por pares y cubren varios regímenes de mercado (2015-16, 2018, 2020). El cierre ajustado incluye splits y dividendos, y las features solo necesitan retornos de cierre, así que `Open/High/Low/Volume` no se usan.
+- **Nota:** las 31 series (30 acciones y `SPY`) no tienen valores faltantes. El período se cambia en las constantes `INICIO` y `FIN` del script.
+
+## 13. Retornos y estructura del dataset por pares
+
+- **Decisión:** trabajar con retornos diarios (variación porcentual del cierre) y no con precios. El dataset tiene una fila por par de acciones y fecha de corte. Cada par aparece una sola vez, con `accion_id_1` menor que `accion_id_2` en orden alfabético.
+- **Por qué:** la correlación se mide sobre cuánto se mueve cada acción y no sobre su nivel de precio. Fijar el orden evita que el mismo par aparezca duplicado (AAPL-MSFT y MSFT-AAPL).
+- **Cómo:** con 30 acciones hay 435 pares. El archivo es `data/dataset_pares.csv`.
+
+## 14. Sin leakage en las features
+
+- **Decisión:** `corr_30d`, `corr_90d`, `corr_250d`, `dif_volatilidad`, `dif_beta` y `volatilidad_mercado` usan solo retornos con fecha ≤ `fecha_corte`. Solo `corr_futura_60d` usa los 60 días hábiles siguientes. Un test unitario lo verifica: cambia los precios posteriores al corte y comprueba que las features no se modifican y que el target sí.
+- **Por qué:** si una feature viera datos posteriores al corte, el modelo parecería bueno en entrenamiento y fallaría en uso real, donde esos datos no existen. Es el error más común al armar un dataset de series de tiempo.
+- **Nota:** profundiza la decisión 5.
+
+## 15. Ventana de 90 días para volatilidad y beta
+
+- **Decisión:** la volatilidad (desvío estándar de los retornos), la beta (covarianza con `SPY` dividida por la varianza de `SPY`) y la `volatilidad_mercado` se calculan sobre los 90 días hábiles anteriores al corte.
+- **Por qué:** 90 días (unos 4 meses) es un punto medio. Con 30 días las estimaciones son muy ruidosas, y con 250 reaccionan lento a los cambios de régimen. Coincide con la ventana de `corr_90d`, que es el baseline del modelo.
+- **Nota:** es una elección nuestra y no viene de la consigna. Otras ventanas serían defendibles.
+
+## 16. Diferencias en valor absoluto
+
+- **Decisión:** `dif_volatilidad` y `dif_beta` son el valor absoluto de la diferencia entre las dos acciones del par.
+- **Por qué:** mide qué tan distintas son sin depender del orden. Dos acciones con volatilidad muy distinta tienden a moverse menos juntas, sin importar cuál de las dos es la más volátil.
+
+## 17. Fechas de corte y filas descartadas
+
+- **Decisión:** una fecha de corte cada 20 días hábiles (aproximadamente un mes). Se descartan los cortes sin 250 días de historia previa y los cortes sin 60 días hábiles posteriores.
+- **Por qué:** con un corte por día las ventanas se superponen casi por completo, y el dataset tendría filas casi idénticas sin aportar información nueva. Los primeros cortes no pueden calcular `corr_250d` y los últimos no pueden calcular el target.
+
+## 18. Features del modelo
+
+- **Decisión:** el modelo usa como entrada `corr_30d`, `corr_90d`, `corr_250d`, `mismo_sector`, `dif_volatilidad`, `dif_beta` y `volatilidad_mercado`. No usa `accion_id_1`, `accion_id_2` ni `fecha_corte`, y el target es `corr_futura_60d`.
+- **Por qué:** los ids y la fecha identifican la fila, pero no describen cómo se comporta el par. Con los ids el modelo podría memorizar pares puntuales en lugar de aprender una relación general, y con la fecha no podría generalizar a períodos futuros.
+
+## 19. Modelos entrenados con nuestros datos
+
+- **Decisión:** usar los algoritmos de `scikit-learn` (`LinearRegression`, `KNeighborsRegressor`, `DecisionTreeRegressor`) y entrenarlos con nuestro dataset, en vez de modelos preentrenados.
+- **Por qué:** la tarea es específica (correlación a 60 días entre pares de estas 30 acciones, con estas features) y no existe un modelo ya entrenado para ella. Además la consigna pide comparar estos tres modelos contra el baseline `corr_90d`. Con una tabla de 7 columnas y unas 48 mil filas, los modelos simples alcanzan y uno grande se sobreajustaría.

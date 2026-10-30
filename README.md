@@ -60,6 +60,13 @@ cd backend && source venv/bin/activate
 python scripts/descargar_precios.py
 ```
 
+`data/dataset_pares.csv` tiene una fila por par de acciones y fecha de corte (435 pares, un corte cada 20 días hábiles, 48 285 filas), con las features y el target `corr_futura_60d`. Para regenerarlo:
+
+```bash
+cd backend && source venv/bin/activate
+python -m scripts.construir_dataset
+```
+
 ## Uso de IA
 
 Ver la sección correspondiente del informe.
