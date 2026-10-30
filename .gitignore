@@ -15,3 +15,7 @@ dist/
 
 # Entorno
 .env
+
+# Archivos de Claude
+CLAUDE.md
+.claude/
