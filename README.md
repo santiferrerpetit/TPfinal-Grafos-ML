@@ -53,6 +53,13 @@ Aplicación en http://localhost:5173. Espera el backend en http://localhost:8000
 
 Precios diarios descargados una sola vez con `yfinance` y guardados en `data/precios.csv`, para que el resultado no dependa de Yahoo Finance. `yfinance` no es una API oficial de Yahoo y su uso es personal o educativo.
 
+`data/precios.csv` tiene el precio de cierre ajustado (`auto_adjust=True`, incluye splits y dividendos) de las 30 acciones de `data/sectores.csv` y de `SPY`, del 2014-01-02 al 2023-12-29. Para regenerarlo:
+
+```bash
+cd backend && source venv/bin/activate
+python scripts/descargar_precios.py
+```
+
 ## Uso de IA
 
 Ver la sección correspondiente del informe.
