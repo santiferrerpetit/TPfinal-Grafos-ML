@@ -103,3 +103,16 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 
 - **Decisión:** usar los algoritmos de `scikit-learn` (`LinearRegression`, `KNeighborsRegressor`, `DecisionTreeRegressor`) y entrenarlos con nuestro dataset, en vez de modelos preentrenados.
 - **Por qué:** la tarea es específica (correlación a 60 días entre pares de estas 30 acciones, con estas features) y no existe un modelo ya entrenado para ella. Además la consigna pide comparar estos tres modelos contra el baseline `corr_90d`. Con una tabla de 7 columnas y unas 48 mil filas, los modelos simples alcanzan y uno grande se sobreajustaría.
+
+## 20. Split temporal con gap y validación temporal
+
+- **Decisión:** el 30 % final de las fechas de corte es test; antes de test se descartan 3 fechas de corte (60 días hábiles = `HORIZONTE`). Los hiperparámetros se eligen con 4 folds de ventana expansiva sobre train, también con ese gap, usando MAE. Código en `backend/app/modelo.py`.
+- **Por qué:** el target de un corte mira 60 días adelante; sin gap, el target del último corte de train se solaparía con el período de test. Elegir hiperparámetros en train (no en test) evita ajustar al test.
+- **Resultado:** train 2014-12-30 a 2020-11-13, test 2021-03-12 a 2023-09-27.
+
+## 21. Modelo elegido y resultado frente al baseline
+
+- **Decisión:** el modelo guardado en `data/modelo.joblib` es el de menor MAE en validación temporal (hoy KNN, k=1000). Métricas en `data/metricas.json`, gráficos en `informe/figuras/`; se regeneran con `python -m scripts.entrenar_modelo`.
+- **Resultado en test (MAE / R²):** baseline 0,161 / 0,21; regresión lineal 0,156 / 0,29; KNN 0,161 / 0,25; árbol 0,201 / -0,16. La mejora sobre el baseline es chica y la regresión lineal gana en test aunque KNN gana en validación.
+- **Por qué importa:** `corr_90d` ya es un predictor fuerte, así que el aporte de las otras features es modesto. El informe tiene que decirlo con esos números y no vender el modelo como mucho mejor.
+- **Crisis vs calma:** "crisis" = `volatilidad_mercado` sobre el percentil 75 de train. En crisis ningún modelo le gana al baseline; en calma la regresión lineal sí.
