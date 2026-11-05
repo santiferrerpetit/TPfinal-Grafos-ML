@@ -148,6 +148,24 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 - **DSATUR (opcional):** implementado para comparar. Colorea siempre el nodo con más colores distintos entre sus vecinos (saturación), desempatando por grado. Es exacto en grafos bipartitos (usa 2 colores).
 - **Hallazgo importante: el greedy por grado NO garantiza 2 colores en un bipartito.** Es una heurística: siempre da un coloreo propio, pero puede usar más de χ(G). Ejemplo en el test: grafo corona de 8 nodos (bipartito, todos de grado 3) con los nodos intercalados: el greedy usa 4 colores y DSATUR 2. Los tests de "bipartito ⇒ 2 colores" valen para casos concretos (caminos, ciclos pares, K_{m,n}, estrellas) y no como propiedad general. En el informe hay que decirlo; para el chequeo exacto en bipartitos se usa el algoritmo de clase o DSATUR.
 - **Tests:** sin aristas ⇒ 1 color; K_n ⇒ n colores (n = 1, 2, 3, 5, 8, 30); ciclo impar ⇒ 3; χ = máx de las componentes; el coloreo es siempre propio y usa a lo sumo Δ+1 colores en grafos al azar; nunca usa menos colores que la clique máxima (calculada con `networkx`).
-- **Pendiente:** contrastar con χ por polinomio cromático en grafos chicos (todavía no implementado).
+- **Pendiente:** contrastar con χ por polinomio cromático en grafos chicos (hecho en la decisión 25).
 - **Uso de IA:** diseño, código y tests hechos con Claude; registrar en el informe.
 - **Comparación de variantes (agregado):** `python -m scripts.comparar_coloreos` (desde `backend/`) genera [comparacion_coloreo.md](comparacion_coloreo.md). Resumen: DSATUR usa casi siempre igual o menos colores que el greedy por grado; en bipartitos al azar el greedy usa más de 2 colores en 27% a 68% de los casos y DSATUR en ninguno; sobre los datos reales con `corr_90d` la diferencia es mínima (7,69 vs 7,64 canastas con θ = 0,5). Por eso mantenemos el greedy por grado como algoritmo principal (es el que pide la materia) y DSATUR como comparación.
+
+## 24. Algoritmos de grafos extra: bipartición, complemento, quiebre y Prim
+
+- **Fecha:** 2026-11-05.
+- **Decisión:** `backend/app/grafos/algoritmos.py` implementa a mano, sobre la matriz de adyacencia: `es_bipartito` (BFS con 2 colores; devuelve los lados o `(False, None)` si hay ciclo impar), `complemento` (`1 - A` sin diagonal), `nodos_de_quiebre` (v tal que k(G−v) > k(G), recalculando componentes sin cada nodo; reusa `componentes_conexas` de `coloreo.py`) y `prim` (árbol generador mínimo con d = √(2(1−ρ)) sobre la matriz completa de ρ).
+- **Prim:** parte de `pesos` (todos los pares), no de `adyacencia`, porque el árbol conecta todas las acciones sin depender de θ. Un ρ NaN se ignora; si faltan datos y queda desconectado, devuelve un bosque. ρ se acota a [−1, 1] antes de la raíz por seguridad numérica.
+- **Nodo aislado:** no es de quiebre, porque al sacarlo k baja.
+- **Tests:** `backend/tests/test_algoritmos.py`, contrastando con `networkx` (`is_bipartite`, `complement`, `articulation_points` en conexos, peso total del MST).
+- **Uso de IA:** código y tests hechos con Claude; registrar en el informe.
+
+## 25. Polinomio cromático y contraste del greedy con χ
+
+- **Fecha:** 2026-11-05.
+- **Decisión:** `backend/app/grafos/cromatico.py` calcula P(G, λ) a mano por deleción-contracción (P(G) = P(G−e) − P(G/e)), con caso base λ^n sin aristas y producto de los polinomios de cada componente conexa. El polinomio es una lista de coeficientes enteros; `evaluar` usa Horner y `numero_cromatico` devuelve el menor k con P(G, k) > 0.
+- **Solo grafos chicos:** el costo es exponencial en las aristas, así que `polinomio_cromatico` lanza `ValueError` con más de 20 aristas. No se aplica al grafo real de 30 acciones, sino a subgrafos chicos o grafos de prueba.
+- **Tests (`test_cromatico.py`):** fórmulas conocidas (camino, ciclo, K_n, sin aristas), producto por componentes, coincidencia con fuerza bruta (conteo de coloreos propios con k colores) y χ de casos conocidos.
+- **Greedy vs χ:** en 60 grafos al azar de 8 nodos (p = 0,4) el greedy por grado usó exactamente χ en 58 y más en 2; nunca menos. Es la confirmación empírica de que es una heurística; el contraejemplo determinista es la corona (bipartito, χ = 2, greedy usa más).
+- **Uso de IA:** código y tests hechos con Claude; registrar en el informe.
