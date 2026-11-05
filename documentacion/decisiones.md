@@ -116,3 +116,24 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 - **Resultado en test (MAE / R²):** baseline 0,161 / 0,21; regresión lineal 0,156 / 0,29; KNN 0,161 / 0,25; árbol 0,201 / -0,16. La mejora sobre el baseline es chica y la regresión lineal gana en test aunque KNN gana en validación.
 - **Por qué importa:** `corr_90d` ya es un predictor fuerte, así que el aporte de las otras features es modesto. El informe tiene que decirlo con esos números y no vender el modelo como mucho mejor.
 - **Crisis vs calma:** "crisis" = `volatilidad_mercado` sobre el percentil 75 de train. En crisis ningún modelo le gana al baseline; en calma la regresión lineal sí.
+
+## 22. Construcción del grafo de conflicto
+
+- **Fecha:** 2026-11-05.
+- **Decisión:** el módulo `backend/app/grafos/construccion.py` arma el grafo dada una fecha de corte, un umbral θ y una fuente de pesos. Nodos = acciones; arista entre `i` y `j` si ρ(i,j) **>** θ (desigualdad estricta); peso de la arista = ρ(i,j). Tests en `backend/tests/test_construccion_grafo.py`.
+- **Representación:** la clase `GrafoConflicto` guarda dos matrices n×n con `numpy`:
+  - `pesos`: ρ de todos los pares, simétrica, diagonal en 0.
+  - `adyacencia`: 0/1, sale de `pesos > θ`, simétrica, diagonal en 0 (grafo simple, sin lazos).
+
+  El grado de un nodo es la suma de su fila (`grado()`), que es lo que necesita el greedy por grado. `a_networkx()` devuelve el mismo grafo como `nx.Graph` con atributo `weight`, para dibujarlo y para contrastar nuestros algoritmos en los tests.
+- **Por qué matriz de adyacencia y no listas:** es la representación de clase, con 30 nodos el tamaño no importa, y el grado, el complemento (`1 - A` sin la diagonal) y la lectura de pesos son operaciones directas sobre la matriz. `networkx` queda solo como adaptador, ya que los algoritmos se implementan a mano (decisión 7).
+- **Por qué `pesos` completa y `adyacencia` aparte:** cambiar θ solo cambia `adyacencia`, no hace falta recalcular nada. Además la evaluación de las canastas necesita ρ de pares que **no** son arista. Y como θ puede ser negativo, un peso 0 no sirve para marcar "no hay arista"; por eso la adyacencia no se deduce de `pesos != 0`.
+- **Fuentes de pesos intercambiables** (parámetro `fuente`):
+  - `"modelo"`: usa la columna `corr_predicha` del dataset. La agrega el paso del modelo; hasta que exista, el módulo solo exige que la columna esté.
+  - `"corr_90d"`: usa la columna `corr_90d` (la línea base).
+  - `"azar"`: ρ uniforme en [-1, 1] con semilla fija (`semilla`), ignora los datos. Es el piso de comparación y es reproducible.
+
+  Las tres devuelven el mismo tipo de objeto, así que el coloreo y la evaluación no saben de dónde vinieron los pesos. Comparar fuentes es cambiar un string.
+- **Casos borde:** un par sin dato (falta la fila o ρ es NaN) no es arista, porque `NaN > θ` es falso. Si la fecha de corte no existe, la fuente es desconocida o falta la columna, se lanza `ValueError` con un mensaje claro.
+- **Limitación conocida:** con `"azar"` la cantidad de aristas depende solo de θ (cerca de (1-θ)/2 de los pares), mientras que con el modelo depende de las correlaciones reales, que son casi todas positivas. A igual θ el azar tendrá un grafo con densidad distinta. Si en la comparación eso molesta, una alternativa es permutar al azar los ρ del modelo (misma distribución, pares mezclados); queda para decidir cuando se evalúe el coloreo.
+- **Uso de IA:** esta pieza se hizo con Claude (diseño de la clase, código y tests); registrar en el informe.
