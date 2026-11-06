@@ -58,6 +58,30 @@ def greedy_por_grado(adyacencia):
     return colores
 
 
+def greedy_por_grado_con_pesos(adyacencia, pesos):
+    """Greedy por grado que usa ρ̂ para elegir entre los colores válidos.
+
+    Mismo orden que `greedy_por_grado`, pero en vez del menor color libre elige,
+    entre los colores ya abiertos que ningún vecino usa, el de menor suma de ρ̂
+    con los nodos que ya tiene (la canasta donde el nodo queda menos correlacionado).
+    Si no hay ningún color abierto libre, abre uno nuevo. Pares sin dato (NaN) suman 0.
+    """
+    grado = adyacencia.sum(axis=1)
+    pesos = np.nan_to_num(pesos)
+    colores = [None] * len(adyacencia)
+    for comp in componentes_conexas(adyacencia):
+        for i in sorted(comp, key=lambda k: (-grado[k], k)):
+            prohibidos = {colores[v] for v in vecinos(adyacencia, i) if colores[v] is not None}
+            abiertos = {c for c in colores if c is not None}
+            validos = sorted(abiertos - prohibidos)
+            if not validos:
+                colores[i] = menor_color_libre(colores, vecinos(adyacencia, i))
+                continue
+            costo = lambda c: sum(pesos[i, j] for j, cj in enumerate(colores) if cj == c)
+            colores[i] = min(validos, key=lambda c: (costo(c), c))
+    return colores
+
+
 def dsatur(adyacencia):
     """DSATUR (Brélaz): siempre colorea el nodo con más colores distintos en
     sus vecinos (saturación); desempata por grado y luego por índice.

@@ -125,7 +125,7 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
   - `pesos`: ρ de todos los pares, simétrica, diagonal en 0.
   - `adyacencia`: 0/1, sale de `pesos > θ`, simétrica, diagonal en 0 (grafo simple, sin lazos).
 
-  El grado de un nodo es la suma de su fila (`grado()`), que es lo que necesita el greedy por grado. `a_networkx()` devuelve el mismo grafo como `nx.Graph` con atributo `weight`, para dibujarlo y para contrastar nuestros algoritmos en los tests.
+  El grado de un nodo es la suma de su fila (`grado()`), que es lo que necesita el greedy por grado. `dibujar()` lo grafica con matplotlib (ver decisión 27).
 - **Por qué matriz de adyacencia y no listas:** es la representación de clase, con 30 nodos el tamaño no importa, y el grado, el complemento (`1 - A` sin la diagonal) y la lectura de pesos son operaciones directas sobre la matriz. `networkx` queda solo como adaptador, ya que los algoritmos se implementan a mano (decisión 7).
 - **Por qué `pesos` completa y `adyacencia` aparte:** cambiar θ solo cambia `adyacencia`, no hace falta recalcular nada. Además la evaluación de las canastas necesita ρ de pares que **no** son arista. Y como θ puede ser negativo, un peso 0 no sirve para marcar "no hay arista"; por eso la adyacencia no se deduce de `pesos != 0`.
 - **Fuentes de pesos intercambiables** (parámetro `fuente`):
@@ -169,3 +169,21 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 - **Tests (`test_cromatico.py`):** fórmulas conocidas (camino, ciclo, K_n, sin aristas), producto por componentes, coincidencia con fuerza bruta (conteo de coloreos propios con k colores) y χ de casos conocidos.
 - **Greedy vs χ:** en 60 grafos al azar de 8 nodos (p = 0,4) el greedy por grado usó exactamente χ en 58 y más en 2; nunca menos. Es la confirmación empírica de que es una heurística; el contraejemplo determinista es la corona (bipartito, χ = 2, greedy usa más).
 - **Uso de IA:** código y tests hechos con Claude; registrar en el informe.
+
+## 26. Evaluación de las canastas en test (modelo vs corr_90d vs azar)
+
+- **Fecha:** 2026-11-05.
+- **Decisión:** `python -m scripts.evaluar_canastas` (desde `backend/`) toma las 33 fechas de test, arma el grafo con cada fuente (modelo KNN, `corr_90d`, azar con 20 semillas), colorea con el greedy por grado y mide con `corr_futura_60d` la correlación real media entre pares de una misma canasta (`app/evaluacion.py`). También reporta la fracción de pares dentro de una canasta con ρ real > θ y la cantidad de canastas. Salidas: `documentacion/evaluacion_canastas.md`, `data/evaluacion_canastas.csv` y `informe/figuras/evaluacion_canastas.png`. θ ∈ {0,3; 0,4; 0,5; 0,6}.
+- **Azar:** se promedian primero las semillas de cada fecha, para que pese igual que las otras fuentes; se informa el desvío entre semillas (~0,015).
+- **Resultado:** el modelo y `corr_90d` quedan por debajo del azar (menos correlación dentro de las canastas), pero **el modelo no le gana a `corr_90d`**: con θ = 0,3 empatan (0,228 vs 0,223) y con θ más altos `corr_90d` es mejor. Es coherente con el R² chico del modelo sobre el baseline.
+- **Advertencia de comparación:** a igual θ el modelo genera grafos más ralos (predice correlaciones más comprimidas hacia la media), por eso usa menos canastas (3,3 vs 6,9 con θ = 0,5). Menos canastas obliga a juntar más acciones y empeora la métrica, así que la comparación a igual θ no es del todo justa. Pendiente: comparar a igual cantidad de canastas o elegir θ por fuente.
+- **Idea extra (pesos):** `greedy_por_grado_con_pesos` en `coloreo.py` mantiene el orden por grado pero, entre los colores ya abiertos que ningún vecino usa, elige el de menor suma de ρ̂ con sus miembros. Siempre da coloreo propio. Mejora levemente la correlación real frente al greedy común del modelo (p. ej. 0,270 vs 0,278 con θ = 0,5) sin usar más canastas. Tests en `tests/test_evaluacion.py`.
+- **Refactor menor:** `matriz_desde_columna` en `construccion.py` (la usa `matriz_de_pesos` y el script para armar la matriz real).
+- **Archivos generados:** `data/modelo.joblib` se regeneró con `scripts.entrenar_modelo`; no se versiona.
+- **Uso de IA:** código, análisis y tests hechos con Claude; registrar en el informe.
+
+## 27. networkx fuera del código de la app
+
+- **Fecha:** 2026-11-05.
+- **Decisión:** se reemplazó `GrafoConflicto.a_networkx()` por `dibujar()`, que grafica con matplotlib (nodos en círculo calculado con numpy, grosor de arista según ρ, color de nodo según canasta si se pasa `colores`). Por la regla de usar solo numpy, pandas, matplotlib y sklearn, `app/` ya no importa `networkx`; queda únicamente en los tests y en `scripts/comparar_coloreos.py` para contrastar y generar grafos al azar.
+- **Uso de IA:** hecho con Claude; registrar en el informe.

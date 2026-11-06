@@ -70,12 +70,14 @@ def test_par_faltante_o_nan_no_es_arista():
     assert sorted((a, b) for a, b, _ in g.aristas()) == [("A", "C"), ("A", "D"), ("B", "C"), ("B", "D")]
 
 
-def test_a_networkx_conserva_nodos_aristas_y_pesos():
+def test_dibujar_incluye_todos_los_nodos_y_las_aristas():
+    import matplotlib
+
+    matplotlib.use("Agg")
     g = construir_grafo(pares_de_ejemplo(), FECHA, umbral=0.5)
-    nx_g = g.a_networkx()
-    assert set(nx_g.nodes) == {"A", "B", "C", "D"}  # D aislado igual está
-    assert nx_g.number_of_edges() == 3
-    assert nx_g["B"]["C"]["weight"] == 0.9
+    ax = g.dibujar(colores=[0, 1, 2, 0])
+    assert len(ax.lines) == 3  # una línea por arista
+    assert sorted(t.get_text() for t in ax.texts) == ["A", "B", "C", "D"]  # D aislado igual está
 
 
 def test_errores():

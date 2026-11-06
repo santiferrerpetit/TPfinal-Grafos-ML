@@ -15,4 +15,6 @@ print("grado:", g.grado())
 
 print("aristas corr_90d:", construir_grafo(pares, "2024-01-31", 0.5, "corr_90d").aristas())
 print("aristas azar:", construir_grafo(pares, "2024-01-31", 0.0, "azar", semilla=1).aristas())
-print("networkx:", list(g.a_networkx().edges(data=True)))
+import matplotlib.pyplot as plt
+g.dibujar()
+plt.show()

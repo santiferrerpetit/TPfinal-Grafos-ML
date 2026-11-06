@@ -12,7 +12,6 @@ pueden comparar los coloreos.
 
 import numpy as np
 import pandas as pd
-import networkx as nx
 
 # Columna del dataset de la que sale ρ en cada fuente.
 # "modelo" espera una columna `corr_predicha` que agrega el paso del modelo.
@@ -52,12 +51,29 @@ class GrafoConflicto:
             if self.adyacencia[i, j]
         ]
 
-    def a_networkx(self):
-        """Mismo grafo como nx.Graph (para dibujar y para contrastar en tests)."""
-        g = nx.Graph()
-        g.add_nodes_from(self.nodos)  # incluye nodos aislados
-        g.add_weighted_edges_from(self.aristas())
-        return g
+    def dibujar(self, ax=None, colores=None):
+        """Dibuja el grafo con matplotlib: nodos en círculo, grosor de arista según ρ.
+
+        colores: opcional, lista con el color (canasta) de cada nodo.
+        Devuelve el eje usado.
+        """
+        import matplotlib.pyplot as plt
+
+        if ax is None:
+            _, ax = plt.subplots(figsize=(6, 6))
+        n = len(self.nodos)
+        angulos = 2 * np.pi * np.arange(n) / max(n, 1)
+        x, y = np.cos(angulos), np.sin(angulos)
+        for i, j in zip(*np.nonzero(np.triu(self.adyacencia, k=1))):
+            ax.plot([x[i], x[j]], [y[i], y[j]], color="gray", alpha=0.5,
+                    lw=0.5 + 3 * max(self.pesos[i, j], 0), zorder=1)
+        ax.scatter(x, y, s=500, c=colores if colores is not None else "lightsteelblue",
+                   cmap="tab10", edgecolors="black", zorder=2)
+        for k, nombre in enumerate(self.nodos):
+            ax.text(x[k], y[k], nombre, ha="center", va="center", fontsize=7, zorder=3)
+        ax.set_aspect("equal")
+        ax.axis("off")
+        return ax
 
 
 def matriz_de_pesos(pares, nodos, fuente, semilla=0):
@@ -71,8 +87,14 @@ def matriz_de_pesos(pares, nodos, fuente, semilla=0):
         return pesos + pesos.T
 
     columna = COLUMNA_POR_FUENTE[fuente]
+    return matriz_desde_columna(pares, nodos, columna)
+
+
+def matriz_desde_columna(pares, nodos, columna):
+    """Matriz simétrica n×n con el valor de `columna` de cada par (NaN si falta)."""
+    n = len(nodos)
     if columna not in pares.columns:
-        raise ValueError(f"Falta la columna '{columna}' para la fuente '{fuente}'")
+        raise ValueError(f"Falta la columna '{columna}'")
 
     indice = {accion: k for k, accion in enumerate(nodos)}
     pesos = np.full((n, n), np.nan)
