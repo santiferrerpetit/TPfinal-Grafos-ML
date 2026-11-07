@@ -152,3 +152,34 @@ def test_precios_de_una_accion():
     assert d["puntos"][0]["fecha"] < d["puntos"][-1]["fecha"]
     assert client.get("/precios/NOEXISTE").status_code == 404
     assert client.get("/precios/SPY").status_code == 404  # el indice no es del universo
+
+
+def test_comparacion_coincide_con_la_tabla_del_script():
+    d = client.get("/comparacion", params={"umbral": 0.5}).json()
+    v = {x["variante"]: x for x in d["variantes"]}
+    assert list(v) == ["modelo", "modelo + pesos", "corr_90d", "azar"]
+    # valores de documentacion/evaluacion_canastas.md (theta = 0.5)
+    assert v["modelo"]["corr_media"] == pytest.approx(0.278, abs=1e-3)
+    assert v["corr_90d"]["corr_media"] == pytest.approx(0.259, abs=1e-3)
+    assert v["azar"]["corr_media"] == pytest.approx(0.290, abs=1e-3)
+    assert v["modelo"]["aristas"] == pytest.approx(15, abs=0.5)
+    assert d["azar_desvio_corr_media"] == pytest.approx(0.018, abs=1e-3)
+    assert d["fechas"] == 33
+
+
+def test_comparacion_por_fecha():
+    opc = client.get("/comparacion/opciones").json()
+    assert opc["umbrales"] == [0.3, 0.4, 0.5, 0.6] and len(opc["fechas"]) == 33
+    d = client.get("/comparacion", params={"umbral": 0.4, "fecha": opc["fechas"][0]}).json()
+    assert d["fechas"] == 1 and d["fecha"] == opc["fechas"][0]
+    assert {x["variante"] for x in d["variantes"]} == {"modelo", "modelo + pesos", "corr_90d", "azar"}
+
+
+def test_comparacion_umbral_no_evaluado_422(fecha):
+    r = client.get("/comparacion", params={"umbral": 0.55})
+    assert r.status_code == 422 and "disponibles" in r.json()["detail"]
+
+
+def test_comparacion_fecha_de_train_404():
+    r = client.get("/comparacion", params={"umbral": 0.5, "fecha": "2015-05-26"})
+    assert r.status_code == 404

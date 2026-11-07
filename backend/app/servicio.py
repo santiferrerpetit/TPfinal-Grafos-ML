@@ -18,6 +18,7 @@ MODELO = RAIZ / "data" / "modelo.joblib"
 METRICAS = RAIZ / "data" / "metricas.json"
 PRECIOS = RAIZ / "data" / "precios.csv"
 SECTORES = RAIZ / "data" / "sectores.csv"
+EVALUACION = RAIZ / "data" / "evaluacion_canastas.csv"
 VENTANA_VARIACION = 20  # ruedas (~1 mes) para la variacion de la watchlist
 
 
@@ -158,3 +159,57 @@ def serie_de_precios(ticker: str) -> list[dict] | None:
         return None
     serie = precios()[ticker]
     return [{"fecha": f.strftime("%Y-%m-%d"), "precio": round(float(v), 4)} for f, v in serie.items()]
+
+
+COLUMNAS_EVALUACION = ["corr_media", "conflictos", "canastas", "aristas"]
+ORDEN_VARIANTES = ["modelo", "modelo + pesos", "corr_90d", "azar"]
+
+
+@lru_cache
+def evaluacion() -> pd.DataFrame:
+    """Resultados precalculados por scripts/evaluar_canastas.py (solo fechas de test)."""
+    return pd.read_csv(EVALUACION, parse_dates=["fecha"])
+
+
+def umbrales_evaluados() -> list[float]:
+    return sorted(float(t) for t in evaluacion()["theta"].unique())
+
+
+def fechas_evaluadas() -> list[str]:
+    return [f.strftime("%Y-%m-%d") for f in sorted(evaluacion()["fecha"].unique())]
+
+
+def _numero(x: float) -> float | None:
+    return None if pd.isna(x) else float(x)
+
+
+def comparar(umbral: float, fecha: str | None = None) -> dict | None:
+    """Canastas del modelo vs corr_90d vs azar, medidas con la correlacion real de test.
+
+    Sin `fecha` promedia las fechas de test; con `fecha` devuelve solo esa. Para el azar
+    primero se promedian las semillas de cada fecha, igual que en el script. Devuelve None
+    si la fecha no esta en test; levanta ValueError si el umbral no fue evaluado.
+    """
+    df = evaluacion()
+    sel = df[df["theta"].round(6) == round(umbral, 6)]
+    if sel.empty:
+        raise ValueError(f"umbral {umbral} no evaluado; disponibles: {umbrales_evaluados()}")
+    if fecha is not None:
+        sel = sel[sel["fecha"] == pd.Timestamp(fecha)]
+        if sel.empty:
+            return None
+
+    por_fecha = sel.groupby(["variante", "fecha"])[COLUMNAS_EVALUACION].mean()
+    medias = por_fecha.groupby("variante").mean()
+    variantes = [v for v in ORDEN_VARIANTES if v in medias.index]
+
+    # dispersion del azar entre semillas (media por semilla sobre las fechas elegidas)
+    azar = sel[sel["variante"] == "azar"].groupby("semilla")["corr_media"].mean()
+    return {
+        "variantes": [
+            {"variante": v, **{c: _numero(medias.loc[v, c]) for c in COLUMNAS_EVALUACION}}
+            for v in variantes
+        ],
+        "azar_desvio_corr_media": _numero(azar.std()),
+        "fechas": int(sel["fecha"].nunique()),
+    }

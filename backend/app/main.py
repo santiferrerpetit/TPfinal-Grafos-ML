@@ -170,6 +170,31 @@ def chi_por_umbral(fecha: str = Fecha, fuente: Fuente = "modelo"):
     }
 
 
+@app.get("/comparacion")
+def comparacion(
+    umbral: float = Umbral,
+    fecha: str | None = Query(None, pattern=r"^\d{4}-\d{2}-\d{2}$", description="Fecha de test; sin ella se promedian todas"),
+):
+    """Modelo vs corr_90d vs azar: correlacion real dentro de las canastas, en test.
+
+    Usa los resultados precalculados (`python -m scripts.evaluar_canastas`), por lo que solo
+    admite los umbrales evaluados y fechas del periodo de test.
+    """
+    try:
+        res = servicio.comparar(umbral, fecha)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    if res is None:
+        raise HTTPException(404, f"{fecha} no es una fecha de test; ver /comparacion/opciones")
+    return {"umbral": umbral, "fecha": fecha, **res}
+
+
+@app.get("/comparacion/opciones")
+def comparacion_opciones():
+    """Umbrales y fechas para los que hay resultados de comparacion."""
+    return {"umbrales": servicio.umbrales_evaluados(), "fechas": servicio.fechas_evaluadas()}
+
+
 @app.get("/metricas")
 def metricas():
     return servicio.metricas_modelo()
