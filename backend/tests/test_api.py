@@ -118,3 +118,37 @@ def test_polinomio_grafo_completo_demasiado_grande_422(fecha):
 def test_polinomio_accion_desconocida_422(fecha):
     r = client.get("/polinomio", params={"fecha": fecha, "umbral": 0, "acciones": "AAPL,NOEXISTE"})
     assert r.status_code == 422
+
+
+def test_chi_por_umbral_monotono_y_extremos(fecha):
+    d = client.get("/chi-por-umbral", params={"fecha": fecha}).json()
+    p = d["puntos"]
+    assert p[0]["umbral"] == -0.2 and p[-1]["umbral"] == 1.0
+    assert p[-1]["aristas"] == 0 and p[-1]["chi"] == 1
+    # al subir el umbral solo se pierden aristas
+    assert all(a["aristas"] >= b["aristas"] for a, b in zip(p, p[1:]))
+    # coincide con /grafo en un umbral de la grilla
+    g = client.get("/grafo", params={"fecha": fecha, "umbral": 0.5}).json()
+    assert next(x for x in p if x["umbral"] == 0.5)["chi"] == g["chi"]
+
+
+def test_chi_por_umbral_fecha_inexistente_404():
+    assert client.get("/chi-por-umbral", params={"fecha": "1900-01-01"}).status_code == 404
+
+
+def test_acciones_a_fecha(fecha):
+    r = client.get("/acciones", params={"fecha": fecha})
+    assert r.status_code == 200
+    a = r.json()
+    assert len(a) == 30
+    assert {"ticker", "sector", "precio", "variacion"} <= set(a[0])
+    assert all(x["precio"] > 0 for x in a)
+    assert client.get("/acciones", params={"fecha": "1900-01-01"}).status_code == 404
+
+
+def test_precios_de_una_accion():
+    d = client.get("/precios/aapl").json()
+    assert d["ticker"] == "AAPL" and len(d["puntos"]) > 2000
+    assert d["puntos"][0]["fecha"] < d["puntos"][-1]["fecha"]
+    assert client.get("/precios/NOEXISTE").status_code == 404
+    assert client.get("/precios/SPY").status_code == 404  # el indice no es del universo

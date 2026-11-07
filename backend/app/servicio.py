@@ -16,6 +16,9 @@ RAIZ = Path(__file__).resolve().parents[2]
 DATASET = RAIZ / "data" / "dataset_pares.csv"
 MODELO = RAIZ / "data" / "modelo.joblib"
 METRICAS = RAIZ / "data" / "metricas.json"
+PRECIOS = RAIZ / "data" / "precios.csv"
+SECTORES = RAIZ / "data" / "sectores.csv"
+VENTANA_VARIACION = 20  # ruedas (~1 mes) para la variacion de la watchlist
 
 
 @lru_cache
@@ -97,3 +100,61 @@ def polinomio_de_subgrafo(g, acciones: list[str] | None, k: int | None):
         "chi": numero_cromatico(sub),
         "evaluado": None if k is None else {"k": k, "valor": evaluar(poly, k)},
     }
+
+
+UMBRAL_MIN, UMBRAL_MAX, UMBRAL_PASO = -0.2, 1.0, 0.05
+
+
+def chi_por_umbral(fecha: str, fuente: str):
+    """[(umbral, aristas, chi)] para una grilla de umbrales, o None si la fecha no existe.
+
+    chi es la cantidad de colores del greedy (cota superior de chi(G)).
+    """
+    pares = pares_de_fecha(fecha)
+    if pares is None:
+        return None
+    n = round((UMBRAL_MAX - UMBRAL_MIN) / UMBRAL_PASO)
+    salida = []
+    for k in range(n + 1):
+        umbral = round(UMBRAL_MIN + k * UMBRAL_PASO, 2)
+        g = construir_grafo(pares, fecha, umbral, fuente)
+        colores = greedy_por_grado(g.adyacencia)
+        salida.append((umbral, int(g.adyacencia.sum()) // 2, len(set(colores))))
+    return salida
+
+
+@lru_cache
+def precios() -> pd.DataFrame:
+    return pd.read_csv(PRECIOS, index_col="fecha", parse_dates=True)
+
+
+@lru_cache
+def sectores() -> pd.Series:
+    return pd.read_csv(SECTORES).set_index("ticker")["sector"]
+
+
+def acciones_a_fecha(fecha: str) -> list[dict]:
+    """Por accion: sector, precio de la ultima rueda <= fecha y variacion de ~1 mes."""
+    px = precios()
+    i = px.index.searchsorted(pd.Timestamp(fecha), side="right") - 1
+    if i < 0:
+        return []
+    salida = []
+    for ticker, sector in sectores().items():
+        precio = float(px[ticker].iloc[i])
+        previo = float(px[ticker].iloc[i - VENTANA_VARIACION]) if i >= VENTANA_VARIACION else None
+        salida.append({
+            "ticker": ticker,
+            "sector": sector,
+            "precio": precio,
+            "variacion": None if previo is None else precio / previo - 1,
+        })
+    return salida
+
+
+def serie_de_precios(ticker: str) -> list[dict] | None:
+    """[{fecha, precio}] de una accion, o None si no esta en el universo."""
+    if ticker not in sectores().index:
+        return None
+    serie = precios()[ticker]
+    return [{"fecha": f.strftime("%Y-%m-%d"), "precio": round(float(v), 4)} for f, v in serie.items()]

@@ -38,6 +38,22 @@ def fechas():
     return servicio.fechas()
 
 
+@app.get("/acciones")
+def acciones(fecha: str = Fecha):
+    """Universo de acciones con sector, precio y variacion mensual a la fecha de corte."""
+    if fecha not in servicio.fechas():
+        raise HTTPException(404, f"No hay fecha de corte {fecha}")
+    return servicio.acciones_a_fecha(fecha)
+
+
+@app.get("/precios/{ticker}")
+def precios(ticker: str):
+    serie = servicio.serie_de_precios(ticker.upper())
+    if serie is None:
+        raise HTTPException(404, f"Accion desconocida: {ticker}")
+    return {"ticker": ticker.upper(), "puntos": serie}
+
+
 @app.get("/grafo")
 def grafo(fecha: str = Fecha, umbral: float = Umbral, fuente: Fuente = "modelo"):
     _, g, colores, _ = _resolver(fecha, umbral, fuente)
@@ -140,6 +156,18 @@ def polinomio(
     except ValueError as e:
         raise HTTPException(422, f"{e}. Pasar `acciones` para un subgrafo chico (max {MAX_ARISTAS} aristas)")
     return {"fecha": fecha, "umbral": umbral, "fuente": fuente, **res}
+
+
+@app.get("/chi-por-umbral")
+def chi_por_umbral(fecha: str = Fecha, fuente: Fuente = "modelo"):
+    """Curva chi(umbral): colores del greedy y aristas para una grilla de umbrales."""
+    puntos = servicio.chi_por_umbral(fecha, fuente)
+    if puntos is None:
+        raise HTTPException(404, f"No hay fecha de corte {fecha}")
+    return {
+        "fecha": fecha, "fuente": fuente,
+        "puntos": [{"umbral": u, "aristas": a, "chi": c} for u, a, c in puntos],
+    }
 
 
 @app.get("/metricas")

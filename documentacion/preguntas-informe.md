@@ -62,6 +62,14 @@ Los ids de las acciones y la fecha no entran como features: identifican la fila,
 
 Se entrena con el pasado (por ejemplo 2014 a 2020) y se testea con el futuro (2021 a 2023). Con un split al azar, un corte del 15 de marzo caería en entrenamiento y uno del 20 de abril en test, y comparten casi los mismos días de datos. Eso infla las métricas. El split temporal simula el uso real: predecir un futuro que el modelo no vio. Ver decisión 6.
 
+## ¿Qué proporción se usa para train y test, y qué es el gap?
+
+Es aproximadamente 70/30, pero por fechas de corte y no por filas al azar: el 30% de las fechas más recientes va a test y el resto a train. De las 111 fechas de corte, 75 van a train (32.625 filas, de 2014-12-30 a 2020-11-13), 33 a test (14.355 filas, de 2021-03-12 a 2023-09-27) y 3 se descartan.
+
+Esas 3 fechas descartadas son el **gap** (2020-12-14, 2021-01-13 y 2021-02-11). Hacen falta porque el target de cada fila es la correlación de las 60 ruedas siguientes a la fecha de corte. El target del último corte de train llega hasta mediados de febrero de 2021, y si test empezara enseguida, train y test compartirían información de los mismos días (fuga de información). Los cortes están separados por 20 ruedas y el horizonte es de 60, así que el gap es `ceil(60 / 20) = 3` cortes (`GAP_CORTES` en `backend/app/modelo.py`). Es una elección conservadora: el mínimo para que los targets no se pisen es 2 cortes (con 0 se comparten 40 ruedas y con 1, 20), y con 3 el primer corte de test queda 20 ruedas después del último día del target de train. El notebook `02-split-y-baseline` lo comprueba con los datos reales.
+
+Descartarlas cuesta el 2,7% de las filas (1.305 de 48.285) a cambio de que el resultado en test sea confiable. La validación temporal que se usa para elegir hiperparámetros dentro de train aplica la misma idea, con un gap entre el train y la validación de cada fold. Ver decisión 6 y el notebook `02-split-y-baseline`.
+
 ## ¿Qué modelos se comparan?
 
 - **Baseline:** no se entrena. Predice que la correlación futura será igual a `corr_90d`, que es lo que hace hoy la plataforma. Es la vara que hay que superar.
@@ -76,6 +84,44 @@ Se comparan con MAE (error absoluto promedio), RMSE (penaliza más los errores g
 No. Un modelo preentrenado sirve para conocimientos generales (qué es una maleza en una foto), porque se entrenó con millones de ejemplos y lo único que se hace es usarlo. Nuestra tarea es específica: predecir la correlación a 60 días entre pares de estas 30 acciones con estas features, y no existe un modelo ya entrenado para eso. Además, los datos son una tabla chica de 7 columnas y unas 48 mil filas: para eso alcanzan los modelos simples, y uno grande memorizaría el pasado y fallaría en el futuro.
 
 Lo que sí reutilizamos es la librería `scikit-learn`, que trae el método (`LinearRegression`, `KNeighborsRegressor`, `DecisionTreeRegressor`). Lo que el modelo aprende sale de nuestros datos con `.fit(X, y)`. El modelo no "entiende" las acciones: solo encuentra patrones numéricos. Ver decisión 19.
+
+## ¿Qué predice el modelo y qué se hace con esa predicción?
+
+Dado un par de acciones y una fecha de corte, el modelo predice la correlación que van a tener en los 60 días siguientes (`corr_futura_60d`, un número entre -1 y 1). Es una regresión, no una clasificación.
+
+Esa predicción es la entrada del grafo:
+
+1. Con 30 acciones hay 435 pares y el modelo predice la correlación de cada uno.
+2. Se arma un grafo: nodo = acción, y arista entre dos acciones si la correlación predicha supera un umbral θ (se mueven juntas).
+3. Se colorea el grafo con greedy por grado, de modo que dos acciones unidas por una arista no queden con el mismo color. Cada color es una canasta: un grupo de acciones que no se mueven juntas.
+4. La cantidad de colores necesarios, χ(G), mide qué tan correlacionado está el mercado. Sube en las crisis.
+
+Es el mismo planteo del ejercicio de las peceras de la práctica: los peces depredador-presa no pueden compartir pecera, y las acciones correlacionadas no pueden compartir canasta.
+
+## ¿Para qué serviría en la práctica?
+
+Para armar una cartera que no caiga toda junta. Si alguien compra AAPL, MSFT y NVDA parece diversificado (tres empresas), pero las tres se mueven casi igual: si el sector tech cae, pierde en las tres a la vez. La diversificación era falsa.
+
+El sistema indica qué acciones forman una canasta en la que ninguna se mueve junto con otra. Armar la cartera con una canasta, o repartiendo entre canastas, reduce el riesgo de que todo caiga a la vez.
+
+¿Por qué predecir en lugar de usar la correlación histórica? Porque la histórica mira el pasado, y en una crisis las correlaciones suben justo cuando más se necesita diversificar. Si el modelo anticipa eso mejor, las canastas aguantan más cuando importa.
+
+El sistema entrega:
+
+- **Canastas:** qué acciones juntar para diversificar.
+- **χ(G) como termómetro:** si de golpe hacen falta más canastas, el mercado se está volviendo más correlacionado, o sea, hay más riesgo sistémico.
+- **Selector de umbral:** qué tan estricto se es. Umbral bajo da más canastas y más puras. Umbral alto da menos canastas y más laxas.
+
+## ¿Cómo se evalúa si el sistema sirve?
+
+Se arman canastas con tres métodos: con el modelo, con la correlación histórica (`corr_90d`) y al azar. Después se mide la correlación real del período de test dentro de cada canasta. Si las canastas del modelo tienen menos correlación interna, el modelo agrega valor.
+
+## ¿Cuáles son los límites del sistema?
+
+- Es un trabajo académico, no asesoramiento financiero.
+- Diversificar por correlación reduce el riesgo, no garantiza ganancias.
+- Con 30 acciones y datos de Yahoo es una demostración del método, no un producto listo para invertir.
+- El aporte práctico depende de que el modelo le gane al baseline de `corr_90d`. Si no le gana, el aporte sería casi nulo, y eso también es un resultado válido para el informe.
 
 ## ¿De dónde salen los datos y se puede usar yfinance?
 
