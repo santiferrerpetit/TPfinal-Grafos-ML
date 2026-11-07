@@ -1,121 +1,110 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { AlertCircleIcon } from 'lucide-react'
+import { getAcciones, getCanastas, getChiPorUmbral, getFechas, getGrafo, getPrecios, type Fuente } from '@/api'
+import { Explicacion } from '@/components/Explicacion'
+import { GraficoChi } from '@/components/GraficoChi'
+import { GraficoPrecio } from '@/components/GraficoPrecio'
+import { PanelCanastas } from '@/components/PanelCanastas'
+import { Toolbar } from '@/components/Toolbar'
+import { Watchlist } from '@/components/Watchlist'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useDebouncedValue, usePedido } from '@/hooks'
+import { colorCanasta, porcentaje, precio } from '@/lib/formato'
+import { cn } from '@/lib/utils'
+
+const DEBOUNCE_MS = 300
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [fecha, setFecha] = useState<string | null>(null)
+  const [umbral, setUmbral] = useState(0.5)
+  const [fuente, setFuente] = useState<Fuente>('modelo')
+  const [ticker, setTicker] = useState('AAPL')
+  const [vista, setVista] = useState('precio')
+
+  // El slider se mueve fluido, pero la API se consulta recién cuando se detiene.
+  const umbralConsulta = useDebouncedValue(umbral, DEBOUNCE_MS)
+
+  const fechas = usePedido((s) => getFechas(s), [])
+  const fechaActiva = fecha ?? fechas.datos?.at(-1) ?? null
+  const listo = fechaActiva !== null
+
+  const acciones = usePedido((s) => getAcciones(fechaActiva!, s), [fechaActiva], listo)
+  const grafo = usePedido((s) => getGrafo(fechaActiva!, umbralConsulta, fuente, s), [fechaActiva, umbralConsulta, fuente], listo)
+  const canastas = usePedido((s) => getCanastas(fechaActiva!, umbralConsulta, fuente, s), [fechaActiva, umbralConsulta, fuente], listo)
+  const curva = usePedido((s) => getChiPorUmbral(fechaActiva!, fuente, s), [fechaActiva, fuente], listo)
+  const precios = usePedido((s) => getPrecios(ticker, s), [ticker])
+
+  const error = fechas.error ?? acciones.error ?? grafo.error ?? canastas.error ?? curva.error ?? precios.error
+  const accion = acciones.datos?.find((a) => a.ticker === ticker)
+  const canastaDeTicker = grafo.datos?.nodos.find((n) => n.id === ticker)?.canasta
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="flex min-h-svh flex-col bg-background text-foreground lg:h-svh">
+      {fechas.datos && fechaActiva && (
+        <Toolbar
+          fechas={fechas.datos}
+          fecha={fechaActiva}
+          onFecha={setFecha}
+          umbral={umbral}
+          onUmbral={setUmbral}
+          fuente={fuente}
+          onFuente={setFuente}
+        />
+      )}
 
-      <div className="ticks"></div>
+      {error && (
+        <Alert variant="destructive" className="m-3 w-auto">
+          <AlertCircleIcon />
+          <AlertTitle>No se pudo cargar</AlertTitle>
+          <AlertDescription>
+            {error}. ¿Está corriendo el backend en <code>localhost:8000</code>?
+          </AlertDescription>
+        </Alert>
+      )}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[17rem_minmax(0,1fr)_21rem]">
+        <Watchlist acciones={acciones.datos} nodos={grafo.datos?.nodos ?? null} seleccionada={ticker} onSeleccionar={setTicker} />
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+        <main className="flex min-h-0 flex-col gap-3 p-4">
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <h1 className="text-2xl font-semibold">{ticker}</h1>
+            <span className="text-sm text-muted-foreground">{accion?.sector}</span>
+            {accion && (
+              <>
+                <span className="text-2xl tabular-nums">{precio(accion.precio)}</span>
+                <span className={cn('tabular-nums', accion.variacion !== null && (accion.variacion >= 0 ? 'text-up' : 'text-down'))}>
+                  {porcentaje(accion.variacion)} en 1 mes
+                </span>
+              </>
+            )}
+            {canastaDeTicker !== undefined && (
+              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <span className="size-2.5 rounded-full" style={{ background: colorCanasta(canastaDeTicker) }} />
+                Canasta {canastaDeTicker + 1}
+              </span>
+            )}
+          </div>
+
+          <Tabs value={vista} onValueChange={(v) => setVista(String(v))} className="min-h-80 flex-1">
+            <TabsList variant="line">
+              <TabsTrigger value="precio">Precio</TabsTrigger>
+              <TabsTrigger value="chi">Canastas según θ</TabsTrigger>
+            </TabsList>
+            <TabsContent value="precio" className="min-h-0 flex-1">
+              <GraficoPrecio ticker={ticker} puntos={precios.datos?.puntos ?? null} fechaCorte={fechaActiva ?? ''} />
+            </TabsContent>
+            <TabsContent value="chi" className="min-h-0 flex-1">
+              <GraficoChi puntos={curva.datos?.puntos ?? null} umbral={umbral} />
+            </TabsContent>
+          </Tabs>
+
+          <Explicacion />
+        </main>
+
+        <PanelCanastas grafo={grafo.datos} canastas={canastas.datos?.canastas ?? null} seleccionada={ticker} onSeleccionar={setTicker} />
+      </div>
+    </div>
   )
 }
 
