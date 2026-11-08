@@ -22,9 +22,19 @@ Resultado principal, dicho con honestidad: el modelo mejora poco a la línea bas
 
 ### 1.1 Quién tiene el problema y qué decisión se quiere tomar
 
-Una plataforma de inversiones quiere ayudar a sus clientes a armar carteras realmente diversificadas. Hoy sugiere "comprar acciones de distintos sectores", pero eso no alcanza: dos acciones de sectores distintos pueden moverse casi igual, y la correlación entre acciones cambia con el tiempo (en las crisis suele subir justo cuando más se necesita diversificar). La alternativa habitual es usar la correlación histórica, que mira al pasado y no a lo que va a pasar.
+Una plataforma de inversiones quiere ayudar a sus clientes a armar carteras realmente diversificadas. Diversificar es no poner todos los huevos en la misma canasta: si dos acciones suben y bajan juntas, tener las dos casi equivale a tener una sola, y el riesgo no se reduce. Lo que importa entonces es **qué tan parecido se mueven** las acciones de una cartera.
 
-La decisión es **qué acciones agrupar en una misma canasta** y **cuántas canastas hacen falta**, de modo que dentro de cada canasta las acciones no se muevan juntas.
+**Qué es la correlación.** Es un número entre −1 y 1 que mide qué tan parecido se mueven dos acciones, calculado sobre sus retornos diarios (cuánto subió o bajó cada una de un día al siguiente) en una ventana de días. Cerca de 1, suben y bajan juntas; cerca de 0, no tienen relación; negativa, se mueven al revés.
+
+**Por qué "comprar acciones de distintos sectores" no alcanza.** Es lo que hoy sugiere la plataforma, pero dos acciones de sectores distintos pueden moverse casi igual. Por ejemplo, AAPL (tecnología) y KO (consumo primario) tenían una correlación de 0,17 a fines de enero de 2020 y de 0,78 a fines de marzo del mismo año.
+
+**Qué es la correlación histórica.** Es la correlación calculada con los retornos de una ventana de días *pasados*: en este trabajo, los últimos 30, 90 o 250 días hábiles (`corr_30d`, `corr_90d` y `corr_250d`). Es lo que se usa habitualmente para decidir qué acciones combinar, y supone que los próximos días se van a parecer a los últimos.
+
+**Por qué cambia con el tiempo.** La correlación no es una propiedad fija de un par de acciones: depende del contexto del mercado. En una crisis suele haber ventas generalizadas y las acciones tienden a moverse más juntas, sin importar su sector, y por eso la correlación sube justo cuando más se necesita diversificar. En nuestros datos, el promedio de los 435 pares fue de 0,18 el 31/01/2020 (calculado con los 90 días anteriores) y de 0,68 el 30/03/2020, en plena crisis.
+
+**Por qué mirar el pasado no alcanza.** La correlación histórica no anticipa estos cambios, porque por definición solo conoce lo que ya pasó. Con el corte del 31/01/2020, la histórica decía que el mercado estaba poco correlacionado (0,18), y en los 60 días siguientes la correlación promedio real fue de 0,68. En todo el dataset, la correlación de los últimos 90 días y la de los 60 días siguientes se parecen solo moderadamente (correlación de 0,48 entre ambas). Si se usa un umbral de 0,5, de los pares que lo superaban en los últimos 90 días, el 54 % ya no lo superaba en los 60 días siguientes, y otros 5 506 pares que no lo superaban sí lo superaron después (notebook `01-dataset`).
+
+**La decisión.** Como la histórica no alcanza, el sistema predice la correlación futura con un modelo, y con esa predicción decide **qué acciones agrupar en una misma canasta y cuántas canastas hacen falta**, de modo que dentro de cada canasta las acciones no se muevan juntas.
 
 ### 1.2 Por qué un grafo
 
