@@ -109,6 +109,16 @@ Se comparan los tres modelos pedidos que aplican a regresión, contra una línea
 
 Se usan los algoritmos de `scikit-learn` entrenados con nuestro dataset, y no modelos preentrenados: la tarea es específica (correlación a 60 días entre pares de estas 30 acciones, con estas features) y no existe un modelo ya entrenado para ella. Con una tabla de 7 columnas y unas 48 mil filas, los modelos simples alcanzan y uno grande se sobreajustaría.
 
+### 3.1 Cómo se entrenó cada modelo
+
+El *algoritmo* viene de `scikit-learn`, pero el *modelo* (lo que aprendió) sale de entrenarlo con nuestro dataset: las 32 625 filas de train, con las 7 features como entrada y `corr_futura_60d` como salida. El entrenamiento está en `backend/scripts/entrenar_modelo.py` (el código de los modelos, en `backend/app/modelo.py`), tarda unos 15 segundos y es reproducible: volver a correrlo da las mismas métricas. El modelo elegido se guarda en `data/modelo.joblib`, que la API carga una sola vez; el archivo no se versiona y se regenera con el script.
+
+- **Regresión lineal:** ajusta un coeficiente por feature, más un término independiente, por mínimos cuadrados. Es el más simple y el más fácil de interpretar.
+- **kNN:** casi no tiene entrenamiento en el sentido clásico: guarda los datos de train y, para predecir un par nuevo, busca los `k` pares de train más parecidos según las 7 features y devuelve el promedio de su correlación futura. Lo único que se elige es `k`.
+- **Árbol de decisión:** aprende reglas del tipo "`feature` ≤ valor" que van partiendo los datos; `max_depth` y `min_samples_leaf` limitan cuánto puede ajustarse al ruido.
+
+La regresión lineal y el kNN usan las features **estandarizadas** (media 0 y desvío 1), para que ninguna pese más que otra solo por su escala; en el kNN importa porque se calculan distancias entre pares. El modelo que se usa en la aplicación es el de menor MAE en validación temporal, que resultó ser el kNN con `k = 1000` (sección 4.3). Con un `k` tan grande el kNN promedia muchísimos pares, y por eso sus predicciones quedan muy suavizadas, cercanas al promedio; esto tiene consecuencias para el grafo (sección 6).
+
 ---
 
 ## 4. Metodología del modelo y resultados
@@ -342,13 +352,32 @@ La pantalla tiene una barra superior (fecha de corte, umbral θ, fuente de corre
 - **Métricas del modelo:** las tablas de la sección 4.
 - **Panel de canastas:** acciones de cada canasta y su correlación real posterior.
 
-**[COMPLETAR: capturas de pantalla.]** Insertar con `![descripción](figuras/nombre.png)`. Sugeridas:
+### 9.3 Capturas
 
-1. Pantalla completa con θ intermedio (por ejemplo 0,5).
-2. Pestaña **Grafo** con θ intermedio, y la misma con θ muy bajo (casi K₃₀) y muy alto (sin aristas).
-3. Pestaña **Canastas según θ**.
-4. Pestaña **Modelo vs. histórica**.
-5. Una fecha de crisis (por ejemplo 2020-03-30, que es de train pero sirve para mostrar el efecto), con la fuente **Histórica**: el número de canastas sube a 22 con θ = 0,5. Con la fuente **Modelo** no sube (se queda en 3), y esa diferencia vale una captura propia (ver sección 6).
+Todas las capturas usan la fecha de corte 2023-09-27 (la última de test).
+
+**Figura 1. Pantalla completa** (fuente Modelo, θ = 0,5, pestaña Precio). A la izquierda, las 30 acciones agrupadas por canasta con su precio y variación mensual; en el centro, el precio de la acción elegida con la fecha de corte y las 60 ruedas a predecir; a la derecha, las 3 canastas que resultan, con su correlación real posterior.
+
+![Figura 1: pantalla completa](figuras/captura_1_pantalla.png)
+
+**Figura 2. Grafo coloreado con θ = 0,5**, armado con la fuente Modelo (arriba, 10 aristas) y con la fuente Histórica (abajo, 15 aristas). Cada nodo es una acción, el color indica la canasta y una arista une a las acciones cuya correlación supera θ. En ambos casos hacen falta 3 canastas, pero el grafo del modelo es más ralo.
+
+![Figura 2a: grafo con la fuente Modelo](figuras/captura_2a_grafo_modelo.png)
+
+![Figura 2b: grafo con la fuente Histórica](figuras/captura_2b_grafo_historica.png)
+
+**Figura 3. Los dos extremos del umbral.** Con θ = −0,2 todos los pares superan el umbral: el grafo es el completo K₃₀ (435 aristas) y hacen falta 30 canastas, una por acción. Con θ = 1 ningún par lo supera: no hay aristas y alcanza con una sola canasta.
+
+![Figura 3a: θ = −0,2 (K₃₀, 30 canastas)](figuras/captura_3a_theta_minimo.png)
+
+![Figura 3b: θ = 1 (sin aristas, 1 canasta)](figuras/captura_3b_theta_maximo.png)
+
+**[COMPLETAR: faltan estas capturas.]** Insertar con `![descripción](figuras/nombre.png)`:
+
+1. Pestaña **Canastas según θ** (la curva de 30 a 1 canastas).
+2. Pestaña **Modelo vs. histórica**, con el aviso sobre la cantidad de canastas visible.
+3. Pestaña **Métricas del modelo**.
+4. Una fecha de crisis (2020-03-30, que es de train pero sirve para mostrar el efecto), con θ = 0,5 y en la pestaña Grafo: una con la fuente **Histórica** (22 canastas) y otra con la fuente **Modelo** (3 canastas). Esa diferencia ilustra la sección 6.
 
 ---
 
