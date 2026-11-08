@@ -4,7 +4,7 @@
 
 Integrantes: **Manuel García de la Vega y Santiago Ferrer Petit**
 Fecha de entrega: 08/11/2026
-Repositorio: https://github.com/santiferrerpetit/TPfinal-Grafos-ML
+Repositorio: https://github.com/santiferrerpetit/diversificacion-carteras
 
 > **Estado: borrador.** Los puntos marcados con **[COMPLETAR]** necesitan datos o decisiones que no están en el repositorio (nombres, sección de uso de IA). Todos los números salen de `data/metricas.json`, `data/evaluacion_canastas.csv` y los notebooks de `notebooks/`, y se regeneran con los scripts indicados al final.
 
