@@ -32,12 +32,15 @@ function centroCanasta(c: number, cantidad: number) {
  * Simulación de fuerzas "viva": no se resuelve de una vez, el componente la deja correr y los
  * nodos se mueven solos hasta acomodarse (y siguen flotando un poco si `alphaTarget` > 0).
  * `previas` conserva dónde estaban los nodos, para que al cambiar de vista se muevan desde ahí.
+ * `arbol` (opcional): uniones del árbol mínimo; en la vista de conflicto también actúan como resortes,
+ * más suaves, para que el árbol se vea como árbol en vez de líneas cruzadas.
  */
 export function crearSimulacion(
   nodos: Nodo[],
   aristas: Arista[],
   vista: VistaLayout,
   previas: Map<string, { x: number; y: number }>,
+  arbol: Arista[] = [],
 ): Simulation<NodoSim, undefined> {
   const cantidad = Math.max(1, ...nodos.map((n) => n.canasta + 1))
   const sim_nodos: NodoSim[] = nodos.map((n, i) => {
@@ -59,9 +62,13 @@ export function crearSimulacion(
 
   if (vista === 'conflicto') {
     const enlaces: Enlace[] = aristas.map((a) => ({ source: a.source, target: a.target }))
+    // Con muchas aristas los resortes juntarían todo en un punto: se aflojan y se repele más.
+    const densidad = aristas.length / Math.max(1, nodos.length)
+    const enlacesArbol: Enlace[] = arbol.map((a) => ({ source: a.source, target: a.target }))
     sim
-      .force('enlaces', forceLink<NodoSim, Enlace>(enlaces).id((n) => n.id).distance(70).strength(0.6))
-      .force('carga', forceManyBody().strength(-140))
+      .force('enlaces', forceLink<NodoSim, Enlace>(enlaces).id((n) => n.id).distance(70).strength(Math.min(0.6, 1.2 / (densidad + 1))))
+      .force('arbol', forceLink<NodoSim, Enlace>(enlacesArbol).id((n) => n.id).distance(55).strength(0.25))
+      .force('carga', forceManyBody().strength(-140 - 25 * densidad))
       .force('x', forceX(ANCHO / 2).strength(0.05))
       .force('y', forceY(ALTO / 2).strength(0.08))
   } else {
