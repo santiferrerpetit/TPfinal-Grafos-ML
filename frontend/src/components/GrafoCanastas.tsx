@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { Simulation } from 'd3-force'
-import type { Arista, Complemento, Grafo } from '@/api'
+import { getArbolMinimo, getNodosQuiebre, type Arista, type Complemento, type Fuente, type Grafo } from '@/api'
+import { PolinomioPanel } from '@/components/PolinomioPanel'
+import { usePedido } from '@/hooks'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { colorCanasta } from '@/lib/formato'
@@ -13,6 +15,8 @@ interface Props {
   complemento: Complemento | null
   vista: VistaGrafo
   onVista: (v: VistaGrafo) => void
+  fecha: string
+  fuente: Fuente
   umbral: number
   seleccionada: string
   onSeleccionar: (ticker: string) => void
@@ -20,6 +24,8 @@ interface Props {
 
 /** Cuánto se mueve la simulación en reposo: lo justo para que el grafo "respire". */
 const ALPHA_REPOSO = 0.012
+/** Color de lo que se agrega encima del grafo: árbol mínimo y nodos de quiebre. */
+const ACENTO = 'oklch(0.82 0.16 85)'
 const clave = (a: Arista) => `${a.source}|${a.target}`
 const limitar = (t: number) => Math.min(1, Math.max(0, t))
 const reducirMovimiento = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
@@ -31,8 +37,15 @@ const reducirMovimiento = () => window.matchMedia?.('(prefers-reduced-motion: re
  * - Conflicto: arista si ρ > θ; más gruesa y opaca cuanto mayor es la correlación.
  * - Complemento: arista si ρ ≤ θ; más gruesa cuanto MENOR es la correlación. Cada canasta es un racimo.
  */
-export function GrafoCanastas({ grafo, complemento, vista, onVista, umbral, seleccionada, onSeleccionar }: Props) {
+export function GrafoCanastas({ grafo, complemento, vista, onVista, fecha, fuente, umbral, seleccionada, onSeleccionar }: Props) {
   const [hover, setHover] = useState<string | null>(null)
+  const [capas, setCapas] = useState<string[]>([])
+  const verMst = capas.includes('mst')
+  const verQuiebre = capas.includes('quiebre')
+  const mst = usePedido((s) => getArbolMinimo(fecha, fuente, s), [fecha, fuente], verMst)
+  const quiebre = usePedido((s) => getNodosQuiebre(fecha, umbral, fuente, s), [fecha, umbral, fuente], verQuiebre)
+  const nodosQuiebre = useMemo(() => new Set(quiebre.datos?.nodos_de_quiebre ?? []), [quiebre.datos])
+  const aristasMst = verMst ? (mst.datos?.aristas ?? null) : null
   const [camara, setCamara] = useState({ k: 1, x: 0, y: 0 })
 
   const svgRef = useRef<SVGSVGElement>(null)
@@ -41,6 +54,7 @@ export function GrafoCanastas({ grafo, complemento, vista, onVista, umbral, sele
   const nodosRef = useRef<Map<string, NodoSim>>(new Map())
   const elNodos = useRef(new Map<string, SVGGElement>())
   const elAristas = useRef(new Map<string, SVGLineElement>())
+  const elMst = useRef(new Map<string, SVGLineElement>())
   const arrastre = useRef<{ id: string; x0: number; y0: number; movido: boolean } | null>(null)
   const paneo = useRef<{ x: number; y: number } | null>(null)
 
@@ -63,17 +77,18 @@ export function GrafoCanastas({ grafo, complemento, vista, onVista, umbral, sele
     for (const n of nodosRef.current.values()) {
       elNodos.current.get(n.id)?.setAttribute('transform', `translate(${n.x ?? 0},${n.y ?? 0})`)
     }
-    for (const a of aristas ?? []) {
-      const el = elAristas.current.get(clave(a))
+    const unir = (el: SVGLineElement | undefined, a: Arista) => {
       const p = nodosRef.current.get(a.source)
       const q = nodosRef.current.get(a.target)
-      if (!el || !p || !q) continue
+      if (!el || !p || !q) return
       el.setAttribute('x1', String(p.x ?? 0))
       el.setAttribute('y1', String(p.y ?? 0))
       el.setAttribute('x2', String(q.x ?? 0))
       el.setAttribute('y2', String(q.y ?? 0))
     }
-  }, [aristas])
+    for (const a of aristas ?? []) unir(elAristas.current.get(clave(a)), a)
+    for (const a of aristasMst ?? []) unir(elMst.current.get(clave(a)), a)
+  }, [aristas, aristasMst])
   const pintarRef = useRef(pintar)
   pintarRef.current = pintar
   useLayoutEffect(pintar, [pintar, vista])
@@ -83,7 +98,7 @@ export function GrafoCanastas({ grafo, complemento, vista, onVista, umbral, sele
   useEffect(() => {
     if (!grafo) return
     const previas = new Map([...nodosRef.current].map(([id, n]) => [id, { x: n.x ?? 0, y: n.y ?? 0 }]))
-    const sim = crearSimulacion(grafo.nodos, grafo.aristas, vista, previas)
+    const sim = crearSimulacion(grafo.nodos, grafo.aristas, vista, previas, aristasMst ?? [])
     nodosRef.current = new Map(sim.nodes().map((n) => [n.id, n]))
     simRef.current = sim
     const reposo = reducirMovimiento() ? 0 : ALPHA_REPOSO
@@ -91,7 +106,7 @@ export function GrafoCanastas({ grafo, complemento, vista, onVista, umbral, sele
     return () => {
       sim.stop()
     }
-  }, [grafo, vista])
+  }, [grafo, vista, aristasMst])
 
   // Rueda = zoom hacia el cursor. Listener nativo porque React registra la rueda como pasiva.
   useEffect(() => {
@@ -199,6 +214,18 @@ export function GrafoCanastas({ grafo, complemento, vista, onVista, umbral, sele
           <ToggleGroupItem value="conflicto">Conflicto</ToggleGroupItem>
           <ToggleGroupItem value="complemento">Complemento</ToggleGroupItem>
         </ToggleGroup>
+        <ToggleGroup
+          multiple
+          variant="outline"
+          size="sm"
+          spacing={0}
+          value={capas}
+          onValueChange={setCapas}
+          aria-label="Capas del grafo"
+        >
+          <ToggleGroupItem value="mst">Árbol mínimo</ToggleGroupItem>
+          <ToggleGroupItem value="quiebre">Nodos de quiebre</ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
       {!grafo || !aristas ? (
@@ -241,6 +268,26 @@ export function GrafoCanastas({ grafo, complemento, vista, onVista, umbral, sele
                 )
               })}
             </g>
+            {aristasMst && (
+              <g>
+                {aristasMst.map((a) => (
+                  <line
+                    key={`mst-${clave(a)}`}
+                    ref={(el) => {
+                      if (el) elMst.current.set(clave(a), el)
+                      else elMst.current.delete(clave(a))
+                    }}
+                    stroke={ACENTO}
+                    strokeWidth={2.2}
+                    strokeOpacity={hover === null || a.source === hover || a.target === hover ? 0.95 : 0.15}
+                    strokeLinecap="round"
+                    className="transition-[stroke-opacity] duration-200"
+                  >
+                    <title>{`Árbol mínimo: ${a.source} – ${a.target} (ρ = ${a.peso.toFixed(2)}, d = ${a.distancia.toFixed(2)})`}</title>
+                  </line>
+                ))}
+              </g>
+            )}
             <g>
               {grafo.nodos.map((n) => {
                 const activo = n.id === seleccionada
@@ -259,6 +306,9 @@ export function GrafoCanastas({ grafo, complemento, vista, onVista, umbral, sele
                     onPointerEnter={() => setHover(n.id)}
                     onPointerLeave={() => setHover(null)}
                   >
+                    {verQuiebre && nodosQuiebre.has(n.id) && (
+                      <circle r={radio + 5} fill="none" stroke={ACENTO} strokeWidth={1.5} strokeDasharray="3 2" />
+                    )}
                     <circle r={radio} fill={colorCanasta(n.canasta)} stroke={activo ? 'var(--foreground)' : 'none'} strokeWidth={2} />
                     <text
                       y={radio + 11}
@@ -270,7 +320,7 @@ export function GrafoCanastas({ grafo, complemento, vista, onVista, umbral, sele
                     >
                       {n.id}
                     </text>
-                    <title>{`${n.id} · canasta ${n.canasta + 1} · ${n.grado} conflictos`}</title>
+                    <title>{`${n.id} · canasta ${n.canasta + 1} · ${n.grado} conflictos${verQuiebre && nodosQuiebre.has(n.id) ? ' · nodo de quiebre' : ''}`}</title>
                   </g>
                 )
               })}
@@ -278,6 +328,31 @@ export function GrafoCanastas({ grafo, complemento, vista, onVista, umbral, sele
           </g>
         </svg>
       )}
+
+      {(verMst || verQuiebre) && (
+        <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+          {verMst && (
+            <p>
+              <span style={{ color: ACENTO }}>■</span> <strong className="text-foreground">Árbol mínimo</strong>: las{' '}
+              {mst.datos?.aristas.length ?? '…'} uniones que conectan a todas las acciones con la menor distancia total
+              d = √(2(1 − ρ)){mst.datos && <> (suma {mst.datos.distancia_total.toFixed(2)})</>}. No depende de θ.
+            </p>
+          )}
+          {verQuiebre && (
+            <p>
+              <span style={{ color: ACENTO }}>◌</span> <strong className="text-foreground">Nodos de quiebre</strong> del grafo de
+              conflicto (sacarlos deja más componentes):{' '}
+              {quiebre.datos
+                ? nodosQuiebre.size > 0
+                  ? [...nodosQuiebre].join(', ')
+                  : 'ninguno con este θ.'
+                : '…'}
+            </p>
+          )}
+        </div>
+      )}
+
+      {grafo && <PolinomioPanel grafo={grafo} fecha={fecha} umbral={umbral} fuente={fuente} seleccionada={seleccionada} />}
     </div>
   )
 }

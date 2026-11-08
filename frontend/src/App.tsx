@@ -108,7 +108,7 @@ function App() {
             )}
           </div>
 
-          <Tabs value={vista} onValueChange={(v) => setVista(String(v))} className={cn('min-h-80 flex-1', vista === 'grafo' && 'min-h-[36rem]', (vista === 'comparacion' || vista === 'modelo') && 'flex-none')}>
+          <Tabs value={vista} onValueChange={(v) => setVista(String(v))} className={cn('min-h-80 flex-1', vista === 'grafo' && 'min-h-[46rem]', (vista === 'comparacion' || vista === 'modelo') && 'flex-none')}>
             <TabsList variant="line">
               <TabsTrigger value="precio">Precio</TabsTrigger>
               <TabsTrigger value="chi">Canastas según θ</TabsTrigger>
@@ -128,6 +128,8 @@ function App() {
                 complemento={complemento.datos}
                 vista={vistaGrafo}
                 onVista={setVistaGrafo}
+                fecha={fechaActiva ?? ''}
+                fuente={fuente}
                 umbral={umbralConsulta}
                 seleccionada={ticker}
                 onSeleccionar={setTicker}
