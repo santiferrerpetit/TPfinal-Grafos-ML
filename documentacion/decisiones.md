@@ -150,7 +150,7 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 - **Tests:** sin aristas ⇒ 1 color; K_n ⇒ n colores (n = 1, 2, 3, 5, 8, 30); ciclo impar ⇒ 3; χ = máx de las componentes; el coloreo es siempre propio y usa a lo sumo Δ+1 colores en grafos al azar; nunca usa menos colores que la clique máxima (calculada con `networkx`).
 - **Pendiente:** contrastar con χ por polinomio cromático en grafos chicos (hecho en la decisión 25).
 - **Uso de IA:** diseño, código y tests hechos con Claude; registrar en el informe.
-- **Comparación de variantes (agregado):** `python -m scripts.comparar_coloreos` (desde `backend/`) genera [comparacion_coloreo.md](comparacion_coloreo.md). Resumen: DSATUR usa casi siempre igual o menos colores que el greedy por grado; en bipartitos al azar el greedy usa más de 2 colores en 27% a 68% de los casos y DSATUR en ninguno; sobre los datos reales con `corr_90d` la diferencia es mínima (7,69 vs 7,64 canastas con θ = 0,5). Por eso mantenemos el greedy por grado como algoritmo principal (es el que pide la materia) y DSATUR como comparación.
+- **Comparación de variantes (agregado):** `python -m scripts.comparar_coloreos` (desde `backend/`) genera [comparacion_coloreo.md](comparacion_coloreo.md). Resumen: DSATUR usa casi siempre igual o menos colores que el greedy por grado; en bipartitos al azar el greedy usa más de 2 colores en 13% a 68% de los casos y DSATUR en ninguno; sobre los datos reales con `corr_90d` la diferencia es mínima (7,69 vs 7,64 canastas con θ = 0,5). Por eso mantenemos el greedy por grado como algoritmo principal (es el que pide la materia) y DSATUR como comparación.
 
 ## 24. Algoritmos de grafos extra: bipartición, complemento, quiebre y Prim
 

@@ -16,6 +16,9 @@ dist/
 # Entorno
 .env
 
+# Modelo entrenado (se regenera con `python -m scripts.entrenar_modelo`)
+data/modelo.joblib
+
 # Archivos de Claude
 CLAUDE.md
 .claude/
