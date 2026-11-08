@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { AlertCircleIcon } from 'lucide-react'
-import { getAcciones, getCanastas, getChiPorUmbral, getFechas, getGrafo, getPrecios, type Fuente } from '@/api'
+import { getAcciones, getCanastas, getChiPorUmbral, getComplemento, getFechas, getGrafo, getPrecios, type Fuente } from '@/api'
 import { Explicacion } from '@/components/Explicacion'
+import { GrafoCanastas, type VistaGrafo } from '@/components/GrafoCanastas'
 import { GraficoChi } from '@/components/GraficoChi'
 import { GraficoPrecio } from '@/components/GraficoPrecio'
 import { PanelCanastas } from '@/components/PanelCanastas'
@@ -21,6 +22,7 @@ function App() {
   const [fuente, setFuente] = useState<Fuente>('modelo')
   const [ticker, setTicker] = useState('AAPL')
   const [vista, setVista] = useState('precio')
+  const [vistaGrafo, setVistaGrafo] = useState<VistaGrafo>('conflicto')
 
   // El slider se mueve fluido, pero la API se consulta recién cuando se detiene.
   const umbralConsulta = useDebouncedValue(umbral, DEBOUNCE_MS)
@@ -32,10 +34,15 @@ function App() {
   const acciones = usePedido((s) => getAcciones(fechaActiva!, s), [fechaActiva], listo)
   const grafo = usePedido((s) => getGrafo(fechaActiva!, umbralConsulta, fuente, s), [fechaActiva, umbralConsulta, fuente], listo)
   const canastas = usePedido((s) => getCanastas(fechaActiva!, umbralConsulta, fuente, s), [fechaActiva, umbralConsulta, fuente], listo)
+  const complemento = usePedido(
+    (s) => getComplemento(fechaActiva!, umbralConsulta, fuente, s),
+    [fechaActiva, umbralConsulta, fuente],
+    listo && vistaGrafo === 'complemento',
+  )
   const curva = usePedido((s) => getChiPorUmbral(fechaActiva!, fuente, s), [fechaActiva, fuente], listo)
   const precios = usePedido((s) => getPrecios(ticker, s), [ticker])
 
-  const error = fechas.error ?? acciones.error ?? grafo.error ?? canastas.error ?? curva.error ?? precios.error
+  const error = fechas.error ?? acciones.error ?? grafo.error ?? complemento.error ?? canastas.error ?? curva.error ?? precios.error
   const accion = acciones.datos?.find((a) => a.ticker === ticker)
   const canastaDeTicker = grafo.datos?.nodos.find((n) => n.id === ticker)?.canasta
 
@@ -66,7 +73,7 @@ function App() {
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[17rem_minmax(0,1fr)_21rem]">
         <Watchlist acciones={acciones.datos} nodos={grafo.datos?.nodos ?? null} seleccionada={ticker} onSeleccionar={setTicker} />
 
-        <main className="flex min-h-0 flex-col gap-3 p-4">
+        <main className="flex min-h-0 flex-col gap-3 overflow-y-auto p-4">
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
             <h1 className="text-2xl font-semibold">{ticker}</h1>
             <span className="text-sm text-muted-foreground">{accion?.sector}</span>
@@ -86,16 +93,28 @@ function App() {
             )}
           </div>
 
-          <Tabs value={vista} onValueChange={(v) => setVista(String(v))} className="min-h-80 flex-1">
+          <Tabs value={vista} onValueChange={(v) => setVista(String(v))} className={cn('min-h-80 flex-1', vista === 'grafo' && 'min-h-[36rem]')}>
             <TabsList variant="line">
               <TabsTrigger value="precio">Precio</TabsTrigger>
               <TabsTrigger value="chi">Canastas según θ</TabsTrigger>
+              <TabsTrigger value="grafo">Grafo</TabsTrigger>
             </TabsList>
             <TabsContent value="precio" className="min-h-0 flex-1">
               <GraficoPrecio ticker={ticker} puntos={precios.datos?.puntos ?? null} fechaCorte={fechaActiva ?? ''} />
             </TabsContent>
             <TabsContent value="chi" className="min-h-0 flex-1">
               <GraficoChi puntos={curva.datos?.puntos ?? null} umbral={umbral} />
+            </TabsContent>
+            <TabsContent value="grafo" className="min-h-0 flex-1">
+              <GrafoCanastas
+                grafo={grafo.datos}
+                complemento={complemento.datos}
+                vista={vistaGrafo}
+                onVista={setVistaGrafo}
+                umbral={umbralConsulta}
+                seleccionada={ticker}
+                onSeleccionar={setTicker}
+              />
             </TabsContent>
           </Tabs>
 

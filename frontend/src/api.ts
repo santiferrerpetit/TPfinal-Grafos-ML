@@ -32,6 +32,15 @@ export interface Grafo {
   aristas: Arista[]
 }
 
+export interface Complemento {
+  fecha: string
+  umbral: number
+  fuente: Fuente
+  nodos: string[]
+  aristas: Arista[]
+  grafo_original_bipartito: boolean
+}
+
 export interface PuntoChi {
   umbral: number
   aristas: number
@@ -94,3 +103,6 @@ export const getPrecios = (ticker: string, signal: AbortSignal) =>
 
 export const getCanastas = (fecha: string, umbral: number, fuente: Fuente, signal: AbortSignal) =>
   pedir<Canastas>('/canastas', { fecha, umbral, fuente }, signal)
+
+export const getComplemento = (fecha: string, umbral: number, fuente: Fuente, signal: AbortSignal) =>
+  pedir<Complemento>('/complemento', { fecha, umbral, fuente }, signal)
