@@ -1,8 +1,21 @@
 import { useState } from 'react'
 import { AlertCircleIcon } from 'lucide-react'
-import { getAcciones, getCanastas, getChiPorUmbral, getComplemento, getFechas, getGrafo, getPrecios, type Fuente } from '@/api'
+import {
+  getAcciones,
+  getCanastas,
+  getChiPorUmbral,
+  getComparaciones,
+  getComplemento,
+  getFechas,
+  getGrafo,
+  getMetricas,
+  getPrecios,
+  type Fuente,
+} from '@/api'
+import { ComparacionCanastas } from '@/components/ComparacionCanastas'
 import { Explicacion } from '@/components/Explicacion'
 import { GrafoCanastas, type VistaGrafo } from '@/components/GrafoCanastas'
+import { MetricasModelo } from '@/components/MetricasModelo'
 import { GraficoChi } from '@/components/GraficoChi'
 import { GraficoPrecio } from '@/components/GraficoPrecio'
 import { PanelCanastas } from '@/components/PanelCanastas'
@@ -41,8 +54,10 @@ function App() {
   )
   const curva = usePedido((s) => getChiPorUmbral(fechaActiva!, fuente, s), [fechaActiva, fuente], listo)
   const precios = usePedido((s) => getPrecios(ticker, s), [ticker])
+  const comparacion = usePedido((s) => getComparaciones(s), [])
+  const metricas = usePedido((s) => getMetricas(s), [])
 
-  const error = fechas.error ?? acciones.error ?? grafo.error ?? complemento.error ?? canastas.error ?? curva.error ?? precios.error
+  const error = fechas.error ?? acciones.error ?? grafo.error ?? complemento.error ?? canastas.error ?? curva.error ?? precios.error ?? comparacion.error ?? metricas.error
   const accion = acciones.datos?.find((a) => a.ticker === ticker)
   const canastaDeTicker = grafo.datos?.nodos.find((n) => n.id === ticker)?.canasta
 
@@ -93,11 +108,13 @@ function App() {
             )}
           </div>
 
-          <Tabs value={vista} onValueChange={(v) => setVista(String(v))} className={cn('min-h-80 flex-1', vista === 'grafo' && 'min-h-[36rem]')}>
+          <Tabs value={vista} onValueChange={(v) => setVista(String(v))} className={cn('min-h-80 flex-1', vista === 'grafo' && 'min-h-[36rem]', (vista === 'comparacion' || vista === 'modelo') && 'min-h-[32rem]')}>
             <TabsList variant="line">
               <TabsTrigger value="precio">Precio</TabsTrigger>
               <TabsTrigger value="chi">Canastas según θ</TabsTrigger>
               <TabsTrigger value="grafo">Grafo</TabsTrigger>
+              <TabsTrigger value="comparacion">Modelo vs histórica</TabsTrigger>
+              <TabsTrigger value="modelo">Métricas del modelo</TabsTrigger>
             </TabsList>
             <TabsContent value="precio" className="min-h-0 flex-1">
               <GraficoPrecio ticker={ticker} puntos={precios.datos?.puntos ?? null} fechaCorte={fechaActiva ?? ''} />
@@ -115,6 +132,12 @@ function App() {
                 seleccionada={ticker}
                 onSeleccionar={setTicker}
               />
+            </TabsContent>
+            <TabsContent value="comparacion" className="min-h-0 flex-1">
+              <ComparacionCanastas datos={comparacion.datos} />
+            </TabsContent>
+            <TabsContent value="modelo" className="min-h-0 flex-1">
+              <MetricasModelo metricas={metricas.datos} />
             </TabsContent>
           </Tabs>
 

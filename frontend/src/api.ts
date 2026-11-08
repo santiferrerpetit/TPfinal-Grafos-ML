@@ -106,3 +106,52 @@ export const getCanastas = (fecha: string, umbral: number, fuente: Fuente, signa
 
 export const getComplemento = (fecha: string, umbral: number, fuente: Fuente, signal: AbortSignal) =>
   pedir<Complemento>('/complemento', { fecha, umbral, fuente }, signal)
+
+export type NombreVariante = 'modelo' | 'modelo + pesos' | 'corr_90d' | 'azar'
+
+export interface VarianteComparada {
+  variante: NombreVariante
+  corr_media: number | null
+  conflictos: number | null
+  canastas: number | null
+  aristas: number | null
+}
+
+export interface Comparacion {
+  umbral: number
+  fecha: string | null
+  variantes: VarianteComparada[]
+  azar_desvio_corr_media: number | null
+  fechas: number
+}
+
+export interface ComparacionPorUmbral {
+  umbrales: number[]
+  porUmbral: Record<number, Comparacion>
+}
+
+/** Comparación en todos los umbrales evaluados (promedio de las fechas de test). */
+export async function getComparaciones(signal: AbortSignal): Promise<ComparacionPorUmbral> {
+  const { umbrales } = await pedir<{ umbrales: number[] }>('/comparacion/opciones', {}, signal)
+  const lista = await Promise.all(umbrales.map((umbral) => pedir<Comparacion>('/comparacion', { umbral }, signal)))
+  return { umbrales, porUmbral: Object.fromEntries(umbrales.map((u, i) => [u, lista[i]])) }
+}
+
+export type NombreModelo = 'baseline' | 'regresion_lineal' | 'knn' | 'arbol'
+
+export interface MetricasModelo {
+  mae: number
+  rmse: number
+  r2: number
+}
+
+export interface Metricas {
+  elegido: NombreModelo
+  train: { filas: number; desde: string; hasta: string }
+  test: { filas: number; desde: string; hasta: string }
+  ajuste: Record<string, { parametros: Record<string, number>; mae_validacion: number }>
+  test_metricas: Record<NombreModelo, MetricasModelo>
+  por_segmento: Record<string, { n: number } & Record<NombreModelo, MetricasModelo>>
+}
+
+export const getMetricas = (signal: AbortSignal) => pedir<Metricas>('/metricas', {}, signal)
