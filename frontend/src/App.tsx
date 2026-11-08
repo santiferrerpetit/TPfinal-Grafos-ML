@@ -108,7 +108,7 @@ function App() {
             )}
           </div>
 
-          <Tabs value={vista} onValueChange={(v) => setVista(String(v))} className={cn('min-h-80 flex-1', vista === 'grafo' && 'min-h-[36rem]', (vista === 'comparacion' || vista === 'modelo') && 'min-h-[32rem]')}>
+          <Tabs value={vista} onValueChange={(v) => setVista(String(v))} className={cn('min-h-80 flex-1', vista === 'grafo' && 'min-h-[36rem]', (vista === 'comparacion' || vista === 'modelo') && 'flex-none')}>
             <TabsList variant="line">
               <TabsTrigger value="precio">Precio</TabsTrigger>
               <TabsTrigger value="chi">Canastas según θ</TabsTrigger>
@@ -133,10 +133,10 @@ function App() {
                 onSeleccionar={setTicker}
               />
             </TabsContent>
-            <TabsContent value="comparacion" className="min-h-0 flex-1">
+            <TabsContent value="comparacion" className="shrink-0">
               <ComparacionCanastas datos={comparacion.datos} />
             </TabsContent>
-            <TabsContent value="modelo" className="min-h-0 flex-1">
+            <TabsContent value="modelo" className="shrink-0">
               <MetricasModelo metricas={metricas.datos} />
             </TabsContent>
           </Tabs>

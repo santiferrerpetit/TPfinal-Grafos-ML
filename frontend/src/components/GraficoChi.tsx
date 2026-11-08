@@ -25,7 +25,7 @@ export function GraficoChi({ puntos, umbral }: Props) {
         <strong className="text-foreground">{actual.chi}</strong> canastas.
       </p>
       <ChartContainer config={config} className="aspect-auto min-h-0 flex-1" aria-label="Canastas según el umbral">
-        <LineChart data={puntos} margin={{ left: 0, right: 8, top: 8 }}>
+        <LineChart data={puntos} margin={{ left: 0, right: 8, top: 8, bottom: 12 }}>
           <CartesianGrid vertical={false} />
           <XAxis
             dataKey="umbral"

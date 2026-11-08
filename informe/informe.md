@@ -6,7 +6,7 @@ Integrantes: **Manuel García de la Vega y Santiago Ferrer Petit**
 Fecha de entrega: 08/11/2026
 Repositorio: https://github.com/santiferrerpetit/TPfinal-Grafos-ML
 
-> **Estado: borrador.** Los puntos marcados con **[COMPLETAR]** necesitan datos o decisiones que no están en el repositorio (nombres, capturas de pantalla, sección de uso de IA). Todos los números salen de `data/metricas.json`, `data/evaluacion_canastas.csv` y los notebooks de `notebooks/`, y se regeneran con los scripts indicados al final.
+> **Estado: borrador.** Los puntos marcados con **[COMPLETAR]** necesitan datos o decisiones que no están en el repositorio (nombres, sección de uso de IA). Todos los números salen de `data/metricas.json`, `data/evaluacion_canastas.csv` y los notebooks de `notebooks/`, y se regeneran con los scripts indicados al final.
 
 ---
 
@@ -372,12 +372,23 @@ Todas las capturas usan la fecha de corte 2023-09-27 (la última de test).
 
 ![Figura 3b: θ = 1 (sin aristas, 1 canasta)](figuras/captura_3b_theta_maximo.png)
 
-**[COMPLETAR: faltan estas capturas.]** Insertar con `![descripción](figuras/nombre.png)`:
+**Figura 4. La crisis de marzo de 2020** (fecha de corte 2020-03-30, θ = 0,5, pestaña Grafo). Con la fuente **Histórica** el grafo es denso (370 aristas) y hacen falta **22 canastas**; con la fuente **Modelo** es ralo (21 aristas) y alcanzan **3 canastas**. Es la diferencia de la sección 6: el grafo armado con la correlación histórica refleja el salto de correlaciones de una crisis, y el armado con el modelo no.
 
-1. Pestaña **Canastas según θ** (la curva de 30 a 1 canastas).
-2. Pestaña **Modelo vs. histórica**, con el aviso sobre la cantidad de canastas visible.
-3. Pestaña **Métricas del modelo**.
-4. Una fecha de crisis (2020-03-30, que es de train pero sirve para mostrar el efecto), con θ = 0,5 y en la pestaña Grafo: una con la fuente **Histórica** (22 canastas) y otra con la fuente **Modelo** (3 canastas). Esa diferencia ilustra la sección 6.
+![Figura 4a: crisis con la fuente Histórica (22 canastas)](figuras/captura_7a_crisis_historica.png)
+
+![Figura 4b: crisis con la fuente Modelo (3 canastas)](figuras/captura_7b_crisis_modelo.png)
+
+**Figura 5. Canastas necesarias según el umbral** (fecha de corte 2023-09-27, fuente Histórica, pestaña "Canastas según θ"). A la izquierda, con θ bajo, casi todos los pares superan el umbral y hacen falta cerca de 30 canastas; a la derecha, con θ alto, alcanza con una. La línea punteada marca el θ elegido (0,5), que en esta fecha requiere 3 canastas. Con la fuente Modelo la curva es más brusca: se queda en 30 canastas hasta θ ≈ 0 y baja de golpe.
+
+![Figura 5: canastas según el umbral (fuente Histórica)](figuras/captura_4_curva_theta.png)
+
+**Figura 6. Comparación de las canastas del modelo, de la correlación histórica y del azar** (pestaña "Modelo vs. histórica", promedio de las 33 fechas de test, detalle con θ = 0,5). Las barras muestran la correlación **real** media dentro de las canastas para cada umbral (menos es mejor), y la tabla da el detalle con θ = 0,5. Todos los métodos superan al azar. La histórica queda mejor que el modelo en correlación media (0,259 contra 0,278), pero usa más del doble de canastas (6,9 contra 3,3) y de aristas (74 contra 15), por eso la pestaña incluye el aviso sobre comparar con el mismo θ.
+
+![Figura 6: modelo vs. histórica vs. azar](figuras/captura_5_modelo_vs_historica.png)
+
+**Figura 7. Métricas del modelo** (pestaña "Métricas del modelo"). La primera tabla compara en test los tres modelos con el baseline (MAE, mejora respecto del baseline, RMSE y R²) y marca el elegido por validación; la segunda da el MAE por segmento. En el total, solo la regresión lineal mejora al baseline (3 %). Por segmento, la lineal y el kNN lo mejoran en calma y en pares de distinto sector (que son la gran mayoría), mientras que en crisis y en pares del mismo sector gana el baseline.
+
+![Figura 7: métricas del modelo](figuras/captura_6_metricas.png)
 
 ---
 
