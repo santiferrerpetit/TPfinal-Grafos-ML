@@ -116,6 +116,42 @@ El sistema entrega:
 
 Se arman canastas con tres métodos: con el modelo, con la correlación histórica (`corr_90d`) y al azar. Después se mide la correlación real del período de test dentro de cada canasta. Si las canastas del modelo tienen menos correlación interna, el modelo agrega valor.
 
+## ¿Qué pasa con un umbral θ muy bajo o muy alto?
+
+θ decide cuándo dos acciones "se llevan mal": hay arista si su correlación supera θ. El selector de la app va de -0,2 a 1, y en los extremos el resultado deja de ser útil:
+
+- **θ muy bajo (-0,2):** casi todos los pares superan el umbral, así que el grafo es casi completo y hacen falta casi 30 canastas, una por acción. Se diversifica perfecto, pero no se agrupa nada. El complemento queda casi vacío.
+- **θ muy alto (1):** ninguna correlación supera 1, así que no hay aristas y alcanza con una sola canasta con las 30 acciones. No hay diversificación: la correlación real dentro de la canasta es la del mercado entero (unos 0,28, parecido a armar canastas al azar). El complemento es el grafo completo.
+
+Lo útil está en el medio, donde el grafo tiene estructura. Con el modelo y la fecha 2023-09-27: θ = 0,25 da 300 aristas y 15 canastas, θ = 0,39 da 99 aristas y 7 canastas, y θ = 0,5 da 10 aristas y 3 canastas. La pestaña "Canastas según θ" muestra esa curva completa.
+
+Efecto en los demás extras:
+
+- **Árbol mínimo:** no cambia, porque se calcula sobre todos los pares con d = √(2(1-ρ)) y no usa θ.
+- **Nodos de quiebre:** casi no aparecen en los extremos. Con θ bajo el grafo es tan denso que sacar un nodo no lo desconecta, y con θ alto casi no hay aristas. Con θ = 0,39 aparecieron JNJ y PG.
+- **Polinomio cromático:** con θ bajo la componente tiene cientos de aristas y el cálculo exponencial se rechaza (tope de 20 aristas). Con θ alto es trivial: una acción aislada da P = λ.
+
+Además, el modelo predice correlaciones más comprimidas hacia la media que la histórica, así que su grafo se vacía antes al subir θ: con θ = 0,6 tiene en promedio 9 aristas y la histórica 33. Por eso, a igual θ, el modelo usa menos canastas y la comparación no es del todo justa (ver decisión 26).
+
+## ¿Qué pasa en una fecha de crisis?
+
+En una crisis las acciones se mueven todas juntas y las correlaciones suben. Con el mismo θ, el grafo tiene muchas más aristas y hacen falta más canastas. Datos del período de test con θ = 0,5, separando las fechas por la volatilidad del mercado (se llama "crisis" a la que supera 0,0113, el mismo umbral que usa el análisis por segmento del modelo):
+
+| | Calma | Crisis |
+|---|---|---|
+| Volatilidad del mercado | 0,008 | 0,015 |
+| Correlación promedio histórica (`corr_90d`) | 0,22 | 0,38 |
+| Aristas con la histórica | 41 | 124 |
+| Canastas con la histórica | 5,4 | 9,2 |
+| Aristas con el modelo | 15 | 15 |
+| Canastas con el modelo | 3,5 | 3,0 |
+
+En el test las fechas de crisis van de mayo de 2022 a febrero de 2023, y el pico es agosto de 2022 con 134 aristas y 10 canastas con la histórica. Diversificar se vuelve más difícil: hay menos pares que se muevan por separado, y la correlación real dentro de las canastas también sube (hasta unos 0,5 en 2022, incluso con canastas al azar). χ(G) funciona como termómetro del riesgo sistémico.
+
+Hallazgo importante: **el modelo casi no reacciona a la crisis.** Sigue prediciendo unas 15 aristas y 3 canastas, igual que en calma, mientras que la histórica sí detecta el salto. Sus predicciones quedan muy comprimidas hacia la media y no captan el cambio, aunque `volatilidad_mercado` es una de sus features. Coincide con que en la evaluación de canastas la histórica le gana al modelo (ver decisión 26), y en crisis la diferencia es mayor. Hay que decirlo en el informe como un límite del modelo y una línea de mejora.
+
+Límite de los datos: el test empieza en 2021, así que la crisis más fuerte del dataset, la de COVID de marzo de 2020 (volatilidad 0,03 y correlación histórica de 0,68), quedó en entrenamiento y la app no la muestra. Mostrarla no serviría para evaluar, porque ahí el modelo ya vio el resultado.
+
 ## ¿Cuáles son los límites del sistema?
 
 - Es un trabajo académico, no asesoramiento financiero.
