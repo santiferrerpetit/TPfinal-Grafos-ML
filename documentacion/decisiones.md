@@ -57,7 +57,7 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 ## 11. SPY en lugar de ^GSPC
 
 - **Decisión:** usar `SPY` (ETF que replica el S&P 500) como referencia de mercado para el beta y la `volatilidad_mercado`. Reemplaza a `^GSPC` de la decisión 10; las decisiones 3 y 5 ya están actualizadas.
-- **Por qué:** es un instrumento más conocido para el equipo. Los retornos de `SPY` y de `^GSPC` son prácticamente idénticos (correlación mayor a 0,99), así que el beta y la volatilidad casi no cambian.
+- **Por qué:** `SPY` es muy conocido en el ámbito financiero, tiene mucho renombre y es donde invierte la mayoría de la gente; además es el instrumento más conocido para el equipo. Los retornos de `SPY` y de `^GSPC` son prácticamente idénticos (correlación mayor a 0,99), así que el beta y la volatilidad casi no cambian.
 - **Nota:** con `auto_adjust=True` el precio de `SPY` incluye dividendos, mientras que `^GSPC` es solo de precio. La diferencia es pequeña y no afecta el uso que le damos.
 
 ## 12. Período y campos descargados

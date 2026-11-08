@@ -6,7 +6,7 @@ Integrantes: **Manuel García de la Vega y Santiago Ferrer Petit**
 Fecha de entrega: 08/11/2026
 Repositorio: https://github.com/santiferrerpetit/diversificacion-carteras
 
-> **Estado: borrador.** Los puntos marcados con **[COMPLETAR]** necesitan datos o decisiones que no están en el repositorio (nombres, sección de uso de IA). Todos los números salen de `data/metricas.json`, `data/evaluacion_canastas.csv` y los notebooks de `notebooks/`, y se regeneran con los scripts indicados al final.
+> **Estado: borrador.** Los puntos marcados con **[COMPLETAR]**, **[CONFIRMAR]** o **[REVISAR]** necesitan datos o decisiones que no están en el repositorio: quedan en la sección 7 (si se compara con clustering) y en la sección 10 (uso de IA). Todos los números salen de `data/metricas.json`, `data/evaluacion_canastas.csv` y los notebooks de `notebooks/`, y se regeneran con los scripts indicados al final.
 
 ---
 
@@ -32,12 +32,12 @@ El modelo de regresión solo entrega un número por par de acciones (435 valores
 
 El planteo es el de un **grafo de conflicto**, igual al de las peceras de la práctica de coloreo (hay elementos que no pueden compartir contenedor y se pide el mínimo de contenedores):
 
-| Práctica                        | Nuestro problema                                |
-| ------------------------------- | ----------------------------------------------- |
-| Peces (depredador-presa)        | Acciones                                        |
+| Práctica                        | Nuestro problema                         |
+| ------------------------------- | ---------------------------------------- |
+| Peces (depredador-presa)        | Acciones                                 |
 | Arista = no pueden estar juntos | Arista = correlación predicha > umbral θ |
-| Pecera                          | Canasta                                         |
-| Mínimo de peceras               | χ(G) = mínimo de canastas                  |
+| Pecera                          | Canasta                                  |
+| Mínimo de peceras               | χ(G) = mínimo de canastas                |
 
 ### 1.3 Decisiones de diseño principales
 
@@ -56,6 +56,8 @@ Las decisiones completas, con su justificación, están en `documentacion/decisi
 
 Precios diarios de cierre ajustado (con splits y dividendos) de **30 acciones del S&P 500 y del ETF `SPY`**, descargados con `yfinance` (Yahoo Finance) del 2014-01-02 al 2023-12-29 (2516 días hábiles, sin valores faltantes). `yfinance` es una librería de código abierto que usa los endpoints públicos de Yahoo; no es una API oficial ni está afiliada a Yahoo, y su documentación indica uso personal o educativo. La descarga se hizo una sola vez (`backend/scripts/descargar_precios.py`) y el resultado está en `data/precios.csv`.
 
+Como referencia del mercado (para calcular el beta de cada acción y la volatilidad del mercado) usamos `SPY`, un ETF que replica el S&P 500. Lo elegimos porque es muy conocido en el ámbito financiero, tiene mucho renombre y es de los instrumentos en los que más gente invierte. Sus retornos son prácticamente idénticos a los del índice S&P 500 (correlación mayor a 0,99), así que el beta y la volatilidad casi no cambian.
+
 Las 30 acciones cubren los 11 sectores y mezclan pares muy correlacionados (por ejemplo JPM-BAC, XOM-CVX) con pares casi independientes (NEM-NVDA, KO-TSLA), para que el modelo vea todo el rango de correlaciones. La lista y el criterio están en `documentacion/ACCIONES.md`. El sector de cada acción está en una tabla propia, `data/sectores.csv`, armada a mano: `yf.Ticker(t).info["sector"]` es lento y a veces falla.
 
 ### 2.2 Transformaciones
@@ -71,8 +73,8 @@ Las 30 acciones cubren los 11 sectores y mezclan pares muy correlacionados (por 
 | ----------------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | `corr_30d`, `corr_90d`, `corr_250d` | Correlación de retornos en las últimas 30, 90 y 250 ruedas | Tres ventanas para captar el comportamiento reciente y el de largo plazo                           |
 | `mismo_sector`                      | 1 si las dos acciones son del mismo sector                 | Acciones del mismo sector tienden a moverse juntas                                                 |
-| `dif_volatilidad`                   | abs(σ₁ − σ₂) con σ de las últimas 90 ruedas                 | Acciones con volatilidad muy distinta tienden a moverse menos juntas                               |
-| `dif_beta`                          | abs(β₁ − β₂), β = cov(acción, SPY) / var(SPY) en 90 ruedas  | Mide qué tan distinta es la sensibilidad al mercado                                                |
+| `dif_volatilidad`                   | abs(σ₁ − σ₂) con σ de las últimas 90 ruedas                | Acciones con volatilidad muy distinta tienden a moverse menos juntas                               |
+| `dif_beta`                          | abs(β₁ − β₂), β = cov(acción, SPY) / var(SPY) en 90 ruedas | Mide qué tan distinta es la sensibilidad al mercado                                                |
 | `volatilidad_mercado`               | σ de `SPY` en las últimas 90 ruedas                        | En las crisis las correlaciones suben; esta columna le dice al modelo en qué clima está el mercado |
 | **`corr_futura_60d`** (target)      | Correlación de los 60 retornos siguientes al corte         | Es lo que se quiere predecir                                                                       |
 
@@ -111,7 +113,7 @@ Se usan los algoritmos de `scikit-learn` entrenados con nuestro dataset, y no mo
 
 ### 3.1 Cómo se entrenó cada modelo
 
-El *algoritmo* viene de `scikit-learn`, pero el *modelo* (lo que aprendió) sale de entrenarlo con nuestro dataset: las 32 625 filas de train, con las 7 features como entrada y `corr_futura_60d` como salida. El entrenamiento está en `backend/scripts/entrenar_modelo.py` (el código de los modelos, en `backend/app/modelo.py`), tarda unos 15 segundos y es reproducible: volver a correrlo da las mismas métricas. El modelo elegido se guarda en `data/modelo.joblib`, que la API carga una sola vez; el archivo no se versiona y se regenera con el script.
+El _algoritmo_ viene de `scikit-learn`, pero el _modelo_ (lo que aprendió) sale de entrenarlo con nuestro dataset: las 32 625 filas de train, con las 7 features como entrada y `corr_futura_60d` como salida. El entrenamiento está en `backend/scripts/entrenar_modelo.py` (el código de los modelos, en `backend/app/modelo.py`), tarda unos 15 segundos y es reproducible: volver a correrlo da las mismas métricas. El modelo elegido se guarda en `data/modelo.joblib`, que la API carga una sola vez; el archivo no se versiona y se regenera con el script.
 
 - **Regresión lineal:** ajusta un coeficiente por feature, más un término independiente, por mínimos cuadrados. Es el más simple y el más fácil de interpretar.
 - **kNN:** casi no tiene entrenamiento en el sentido clásico: guarda los datos de train y, para predecir un par nuevo, busca los `k` pares de train más parecidos según las 7 features y devuelve el promedio de su correlación futura. Lo único que se elige es `k`.
@@ -289,24 +291,24 @@ Dos salvedades honestas: el greedy es una heurística y puede usar más canastas
 
 Para cada una de las 33 fechas de test se arma el grafo con cada fuente de ρ, se colorea con el mismo greedy por grado y se mide, con la correlación **real** de los 60 días siguientes (`corr_futura_60d`), qué tan correlacionadas quedaron las acciones de una misma canasta. **Menos es mejor.** El azar usa 20 semillas por fecha (se promedian primero por fecha). El grafo usa ρ̂ con datos hasta la fecha de corte y se evalúa con la correlación posterior, así que no hay fuga.
 
-| θ | Variante       | Corr. real media en canastas | Pares con ρ real > θ | Canastas | Aristas |
-| -------- | -------------- | ---------------------------- | -------------------- | -------- | ------- |
-| 0,3      | azar           | 0,287                        | 0,481                | 6,7      | 152     |
-| 0,3      | corr_90d       | 0,223                        | 0,347                | 12,1     | 202     |
-| 0,3      | modelo         | 0,228                        | 0,365                | 9,8      | 172     |
-| 0,3      | modelo + pesos | 0,224                        | 0,352                | 10,0     | 172     |
-| 0,4      | azar           | 0,284                        | 0,317                | 5,9      | 129     |
-| 0,4      | corr_90d       | 0,244                        | 0,246                | 9,5      | 133     |
-| 0,4      | modelo         | 0,262                        | 0,277                | 5,7      | 60      |
-| 0,4      | modelo + pesos | 0,252                        | 0,266                | 5,8      | 60      |
-| 0,5      | azar           | 0,290                        | 0,187                | 5,2      | 108     |
-| 0,5      | corr_90d       | 0,259                        | 0,129                | 6,9      | 74      |
-| 0,5      | modelo         | 0,278                        | 0,157                | 3,3      | 15      |
-| 0,5      | modelo + pesos | 0,270                        | 0,158                | 3,3      | 15      |
-| 0,6      | azar           | 0,288                        | 0,087                | 4,7      | 86      |
-| 0,6      | corr_90d       | 0,272                        | 0,059                | 4,7      | 33      |
-| 0,6      | modelo         | 0,276                        | 0,064                | 3,0      | 9       |
-| 0,6      | modelo + pesos | 0,271                        | 0,063                | 3,0      | 9       |
+| θ   | Variante       | Corr. real media en canastas | Pares con ρ real > θ | Canastas | Aristas |
+| --- | -------------- | ---------------------------- | -------------------- | -------- | ------- |
+| 0,3 | azar           | 0,287                        | 0,481                | 6,7      | 152     |
+| 0,3 | corr_90d       | 0,223                        | 0,347                | 12,1     | 202     |
+| 0,3 | modelo         | 0,228                        | 0,365                | 9,8      | 172     |
+| 0,3 | modelo + pesos | 0,224                        | 0,352                | 10,0     | 172     |
+| 0,4 | azar           | 0,284                        | 0,317                | 5,9      | 129     |
+| 0,4 | corr_90d       | 0,244                        | 0,246                | 9,5      | 133     |
+| 0,4 | modelo         | 0,262                        | 0,277                | 5,7      | 60      |
+| 0,4 | modelo + pesos | 0,252                        | 0,266                | 5,8      | 60      |
+| 0,5 | azar           | 0,290                        | 0,187                | 5,2      | 108     |
+| 0,5 | corr_90d       | 0,259                        | 0,129                | 6,9      | 74      |
+| 0,5 | modelo         | 0,278                        | 0,157                | 3,3      | 15      |
+| 0,5 | modelo + pesos | 0,270                        | 0,158                | 3,3      | 15      |
+| 0,6 | azar           | 0,288                        | 0,087                | 4,7      | 86      |
+| 0,6 | corr_90d       | 0,272                        | 0,059                | 4,7      | 33      |
+| 0,6 | modelo         | 0,276                        | 0,064                | 3,0      | 9       |
+| 0,6 | modelo + pesos | 0,271                        | 0,063                | 3,0      | 9       |
 
 _(Desvío del azar entre semillas, en la correlación media: 0,012 a 0,018 según θ.)_
 
@@ -394,7 +396,75 @@ Todas las capturas usan la fecha de corte 2023-09-27 (la última de test).
 
 ## 10. Uso de inteligencia artificial
 
-**[COMPLETAR: a cargo del issue #20.]** La consigna pide: qué herramientas usaron; para qué partes sí y para cuáles no; ejemplos concretos de prompts útiles; casos en que la IA se equivocó y cómo se dieron cuenta; y una reflexión breve. Cada entrada de `documentacion/decisiones.md` marca con "Uso de IA" qué piezas se hicieron con Claude.
+Usamos IA en prácticamente todo el trayecto del trabajo, desde el planteo del problema hasta la mejora de la redacción de este informe. La herramienta principal fue Claude (de Anthropic); también usamos Gemini (de Google) para investigar la problemática.
+
+> **Borrador.** Los puntos marcados con **[CONFIRMAR]** o **[COMPLETAR]** los tienen que revisar o completar los integrantes: son cosas que no se pueden comprobar en el repositorio.
+
+### 10.1 Herramientas
+
+| Herramienta | Para qué la usamos |
+|---|---|
+| **Claude** (Anthropic), a través de Claude Code | Herramienta principal: diseño, código, tests, documentación y redacción. |
+| **Gemini** (Google) | Investigar el tema base y qué proyectos parecidos existían en la red, para tener una idea antes de trabajarlo con Claude. |
+
+### 10.2 Metodología de trabajo
+
+El trabajo con IA fue un ida y vuelta. Empezamos investigando con Gemini el tema base y qué proyectos parecidos había en la red, para tener una idea de por dónde ir. Con eso trabajamos con Claude la idea mínima que teníamos del problema y de lo que queríamos resolver, y después lo usamos para implementar: la IA proponía, y nosotros pedíamos cambios, ejecutábamos los tests y revisábamos los resultados antes de aceptar cada pieza. **[CONFIRMAR: que esto describe el trabajo de ambos integrantes.]**
+
+### 10.3 Dónde se usó
+
+| Etapa | Qué se hizo con IA | Herramienta | Dónde queda registrado |
+|---|---|---|---|
+| **Planteo del problema** | Investigar el tema base y los proyectos existentes (Gemini); desarrollar la idea inicial y la propuesta, `PROPUESTA.md` (Claude) | Gemini y Claude | Commits del 20/10. **[CONFIRMAR]** |
+| **Planificación del trabajo** | Armar los issues, los hitos con sus fechas y el reparto de tareas entre los dos integrantes | Claude | Issues y milestones del repositorio |
+| **Datos, dataset y modelos** | Descarga de precios, features sin leakage, partición temporal y modelos de regresión | **[CONFIRMAR: no hay marca de IA en el repositorio para esta etapa]** | Decisiones 2 a 21 |
+| **Algoritmos de grafos** | Construcción del grafo de conflicto, coloreo greedy y sus variantes (DSATUR), bipartición, complemento, nodos de quiebre, Prim, polinomio cromático, evaluación de canastas y coloreo con pesos: diseño, código y tests | Claude | Decisiones 22 a 27 y commits con coautoría |
+| **Visualización del grafo** | Pestaña "Grafo" del frontend, con simulación de fuerzas | Claude | Decisión 28 |
+| **API** | Endpoints de FastAPI (`/grafo`, `/canastas`, `/comparacion`, `/complemento`, `/prim`, `/nodos-quiebre`, `/polinomio`, `/metricas` y los que usa el frontend) y sus tests | Claude | `backend/app/main.py` y `backend/tests/test_api.py` |
+| **Frontend** | Estructura con Tailwind y shadcn/ui, diseño estilo plataforma de trading, selectores de umbral y fecha con *debounce*, lista de acciones por canasta, gráficos, pestañas de comparación y métricas del modelo, y la explicación en lenguaje llano dentro de la web | Claude | `frontend/src/` |
+| **Notebooks** | Los cuatro notebooks de `notebooks/`, escritos con el estilo de las clases de Machine Learning | Claude | `notebooks/` |
+| **Análisis y verificaciones** | Comprobar el gap con datos reales, medir cómo cambia el número de canastas en la crisis de 2020, probar el README en un clon limpio del repositorio | Claude | Secciones 4.2 y 6, `README.md` |
+| **Documentación** | README, borrador del informe, respuestas de `preguntas-informe.md` y la mejora de la redacción de este documento | Claude | `README.md`, `informe/`, `documentacion/` |
+| **Gestión del repositorio** | Mensajes de commit, comentarios al cerrar issues y el cambio de nombre del repositorio | Claude, con nuestra aprobación en cada paso | Historial de commits e issues |
+
+Una aclaración sobre los commits: algunos llevan la línea de coautoría de Claude y otros no. Por eso la ausencia de esa línea en un commit no significa que no se haya usado IA; el registro completo es esta sección.
+
+### 10.4 Qué hicimos nosotros y para qué no usamos IA
+
+- **Elegimos el tema y conseguimos la aprobación** del tema propio con los docentes.
+- **Aprobamos cada paso que modificaba el repositorio:** en la parte de la API, el frontend y el informe, los commits y los `push` los hicimos nosotros, y la IA consultaba antes de cerrar issues, borrar archivos o renombrar el repositorio. **[CONFIRMAR: cómo fue en la parte de grafos.]**
+- **Sacamos las capturas del frontend** con la aplicación funcionando.
+- **Contrastamos los resultados** que informamos con los archivos que generan los scripts (`data/metricas.json`, `data/evaluacion_canastas.csv`).
+- **Elegimos las 30 acciones sin IA**, por ser acciones conocidas.
+- **Elegimos `SPY` como referencia del mercado** porque es conocido en el ámbito financiero, tiene mucho renombre y es donde invierte la mayoría de la gente.
+- **Investigamos nosotros si Yahoo Finance tenía una API** para obtener los datos de las acciones.
+- **El conocimiento base de Machine Learning** lo traíamos de la escuela; no salió de la IA.
+- **Manuel eligió la ventana de 90 días** para la volatilidad y el beta (decisión 15).
+- **[COMPLETAR: otras decisiones o partes hechas sin IA.]**
+
+### 10.5 Ejemplos concretos de prompts útiles
+
+**[COMPLETAR/CONFIRMAR]** Algunos pedidos reales que nos resultaron útiles:
+
+- *"quiero que la web tenga una vista como si fuera de trading view, además de que use componentes de shadcn"*: definió el diseño de toda la pantalla.
+- *"no termino de entender para qué sirve esa gráfica"* y después *"explicá eso dentro de la web"*: llevó a explicar el umbral con la analogía de repartir invitados en mesas, e incluirla en la aplicación.
+- *"revisá si cumple con este enunciado en donde están las pautas"*: sirvió para auditar el trabajo contra la consigna y detectar lo que faltaba (la sección de IA y las capturas).
+- *"el umbral entonces, ¿para qué sirve bien?"*: derivó en comparar canastas para distintos umbrales con datos reales.
+
+### 10.6 Casos en que la IA se equivocó y cómo nos dimos cuenta
+
+**[REVISAR]** Casos reales de este trabajo:
+
+1. **Tomó un issue que no nos tocaba.** Al pedirle que hiciera los issues vencidos, empezó por uno asignado a otro integrante (el coloreo greedy). Lo notamos nosotros al ver que no era nuestro, y se descartó ese trabajo.
+2. **Una frase del informe afirmaba que en una crisis el número de canastas sube.** Al medirlo en las 111 fechas de corte, se cumplía con la correlación histórica (de 7 a 22 canastas en marzo de 2020) pero no con el modelo (se queda en 3). Se corrigió el texto y pasó a ser un hallazgo del informe (sección 6).
+3. **Un porcentaje mal leído en `decisiones.md`.** Decía que el greedy usa más de 2 colores en bipartitos "27 % a 68 %"; al armar el informe se recalculó con la tabla y era 13 % a 68 %.
+4. **Decir que el gap de 3 cortes "hacía falta".** Al comprobarlo con datos reales (sección 4.2) se vio que el mínimo es 2 y que 3 es una elección conservadora. Se corrigió la redacción.
+5. **Un layout que tapaba las tablas.** Las pestañas de comparación y de métricas se montaban sobre el panel de explicación y ocultaban filas. Lo detectamos en las capturas y se corrigió.
+6. **Comandos de terminal que no funcionaban.** Un comando para apagar los servidores estaba mal armado y no los apagaba; lo notamos porque seguían corriendo.
+
+### 10.7 Reflexión
+
+**[COMPLETAR: la escriben los integrantes.]** La consigna pide una reflexión breve: en qué nos ayudó la IA y en qué no.
 
 ---
 
