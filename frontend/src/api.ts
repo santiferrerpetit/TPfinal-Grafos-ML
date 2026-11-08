@@ -155,3 +155,34 @@ export interface Metricas {
 }
 
 export const getMetricas = (signal: AbortSignal) => pedir<Metricas>('/metricas', {}, signal)
+
+export interface AristaPrim extends Arista {
+  distancia: number
+}
+
+export interface ArbolMinimo {
+  fecha: string
+  fuente: Fuente
+  aristas: AristaPrim[]
+  distancia_total: number
+}
+
+export interface PolinomioCromatico {
+  acciones: string[]
+  aristas: number
+  coeficientes: number[] // coeficientes[i] es el de λ^i
+  chi: number
+  evaluado: { k: number; valor: number } | null
+}
+
+/** Máximo de aristas que acepta el backend para calcular el polinomio (costo exponencial). */
+export const MAX_ARISTAS_POLINOMIO = 20
+
+export const getArbolMinimo = (fecha: string, fuente: Fuente, signal: AbortSignal) =>
+  pedir<ArbolMinimo>('/prim', { fecha, fuente }, signal)
+
+export const getNodosQuiebre = (fecha: string, umbral: number, fuente: Fuente, signal: AbortSignal) =>
+  pedir<{ nodos_de_quiebre: string[] }>('/nodos-quiebre', { fecha, umbral, fuente }, signal)
+
+export const getPolinomio = (fecha: string, umbral: number, fuente: Fuente, acciones: string[], signal: AbortSignal) =>
+  pedir<PolinomioCromatico>('/polinomio', { fecha, umbral, fuente, acciones: acciones.join(',') }, signal)
