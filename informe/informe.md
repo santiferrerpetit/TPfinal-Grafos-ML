@@ -6,7 +6,7 @@ Integrantes: **Manuel García de la Vega y Santiago Ferrer Petit**
 Fecha de entrega: 08/11/2026
 Repositorio: https://github.com/santiferrerpetit/diversificacion-carteras
 
-> **Estado: borrador.** Los puntos marcados con **[COMPLETAR]**, **[CONFIRMAR]** o **[REVISAR]** necesitan datos o decisiones que no están en el repositorio: quedan en la sección 7 (si se compara con clustering) y en la sección 10 (uso de IA). Todos los números salen de `data/metricas.json`, `data/evaluacion_canastas.csv` y los notebooks de `notebooks/`, y se regeneran con los scripts indicados al final.
+> **Estado: borrador.** El punto marcado con **[REVISAR]** necesita una decisión de los integrantes: queda en la sección 7 (si se compara con clustering). Todos los números salen de `data/metricas.json`, `data/evaluacion_canastas.csv` y los notebooks de `notebooks/`, y se regeneran con los scripts indicados al final.
 
 ---
 
@@ -392,79 +392,109 @@ Todas las capturas usan la fecha de corte 2023-09-27 (la última de test).
 
 ![Figura 7: métricas del modelo](figuras/captura_6_metricas.png)
 
+**Figura 8. Árbol mínimo y nodos de quiebre** (fecha de corte 2023-09-27, θ = 0,35, pestaña Grafo). Los botones "Árbol mínimo" y "Nodos de quiebre" superponen sobre el grafo las uniones del árbol recubridor mínimo de Prim, que conecta las 30 acciones con 29 uniones de distancia total 28,03 y no depende de θ, y marcan los nodos de quiebre del grafo de conflicto (AMT y COP: sacarlos deja más componentes).
+
+![Figura 8: árbol mínimo y nodos de quiebre](figuras/captura_8_prim_quiebre.png)
+
+**Figura 9. Vista de complemento** (acción seleccionada BAC, fecha 2023-09-27, θ = 0,43). Se unen las acciones que sí pueden ir juntas (correlación ≤ θ), con más grosor cuanto menos correlacionadas están. Cada canasta queda como un grupo donde todas se unen con todas, es decir, una clique del complemento.
+
+![Figura 9: vista de complemento](figuras/captura_9_complemento.png)
+
+**Figura 10. Polinomio cromático** (fecha 2023-09-27, θ = 0,43). El panel calcula P(G, λ) para la componente conexa de la acción elegida (MSFT: 6 acciones y 6 aristas): P(G, λ) = λ⁶ − 6λ⁵ + 14λ⁴ − 16λ³ + 9λ² − 2λ, de donde χ(G) = 3 (el menor k con P(G, k) > 0). El greedy también usó 3 colores en esa componente, así que coincide con el óptimo (sección 5.4).
+
+![Figura 10: polinomio cromático de una componente](figuras/captura_10_polinomio.png)
+
 ---
 
 ## 10. Uso de inteligencia artificial
 
-Usamos IA en prácticamente todo el trayecto del trabajo, desde el planteo del problema hasta la mejora de la redacción de este informe. La herramienta principal fue Claude (de Anthropic); también usamos Gemini (de Google) para investigar la problemática.
-
-> **Borrador.** Los puntos marcados con **[CONFIRMAR]** o **[COMPLETAR]** los tienen que revisar o completar los integrantes: son cosas que no se pueden comprobar en el repositorio.
+Usamos IA en prácticamente todo el trayecto del trabajo, desde el planteo del problema hasta la mejora de la redacción de este informe. La herramienta principal fue Claude (de Anthropic), sobre todo a través de Claude Code; también usamos Gemini (de Google) para investigar la problemática.
 
 ### 10.1 Herramientas
 
-| Herramienta | Para qué la usamos |
-|---|---|
-| **Claude** (Anthropic), a través de Claude Code | Herramienta principal: diseño, código, tests, documentación y redacción. |
-| **Gemini** (Google) | Investigar el tema base y qué proyectos parecidos existían en la red, para tener una idea antes de trabajarlo con Claude. |
+- **Claude Code** (la herramienta de línea de comandos de Anthropic), corriendo dentro del repositorio. Leía y editaba archivos, ejecutaba `pytest` y los scripts, y hacía los commits cuando se lo pedíamos.
+- **Un archivo `CLAUDE.md`** con las reglas del dominio (sin fuga de información, partición temporal, algoritmos de grafos implementados a mano, librerías permitidas), para que respetara las restricciones del trabajo en cada sesión. Está en `.gitignore` (decisión 9), por eso no figura en el repositorio.
+- **La memoria de Claude Code**, donde quedó guardada la regla de usar solo numpy, pandas, matplotlib y scikit-learn.
+- **Gemini** (Google), para investigar el tema base y qué proyectos parecidos existían en la red, y tener una idea antes de trabajarlo.
 
 ### 10.2 Metodología de trabajo
 
-El trabajo con IA fue un ida y vuelta. Empezamos investigando con Gemini el tema base y qué proyectos parecidos había en la red, para tener una idea de por dónde ir. Con eso trabajamos con Claude la idea mínima que teníamos del problema y de lo que queríamos resolver, y después lo usamos para implementar: la IA proponía, y nosotros pedíamos cambios, ejecutábamos los tests y revisábamos los resultados antes de aceptar cada pieza. **[CONFIRMAR: que esto describe el trabajo de ambos integrantes.]**
+El trabajo con IA fue un ida y vuelta. Empezamos investigando con Gemini el tema base y qué proyectos parecidos había en la red, para tener una idea de por dónde ir. Con eso trabajamos la idea con Claude hasta llegar a una propuesta bien planteada (`PROPUESTA.md`). Después implementamos con Claude Code: pegábamos cada ítem de la lista de tareas como prompt, le pedíamos que nos hiciera preguntas antes de implementar, revisábamos cada cambio, corríamos los tests y hacíamos commits chicos. Cada decisión de diseño quedó documentada con su fecha en `documentacion/decisiones.md`.
 
 ### 10.3 Dónde se usó
 
-| Etapa | Qué se hizo con IA | Herramienta | Dónde queda registrado |
-|---|---|---|---|
-| **Planteo del problema** | Investigar el tema base y los proyectos existentes (Gemini); desarrollar la idea inicial y la propuesta, `PROPUESTA.md` (Claude) | Gemini y Claude | Commits del 20/10. **[CONFIRMAR]** |
-| **Planificación del trabajo** | Armar los issues, los hitos con sus fechas y el reparto de tareas entre los dos integrantes | Claude | Issues y milestones del repositorio |
-| **Datos, dataset y modelos** | Descarga de precios, features sin leakage, partición temporal y modelos de regresión | **[CONFIRMAR: no hay marca de IA en el repositorio para esta etapa]** | Decisiones 2 a 21 |
-| **Algoritmos de grafos** | Construcción del grafo de conflicto, coloreo greedy y sus variantes (DSATUR), bipartición, complemento, nodos de quiebre, Prim, polinomio cromático, evaluación de canastas y coloreo con pesos: diseño, código y tests | Claude | Decisiones 22 a 27 y commits con coautoría |
-| **Visualización del grafo** | Pestaña "Grafo" del frontend, con simulación de fuerzas | Claude | Decisión 28 |
-| **API** | Endpoints de FastAPI (`/grafo`, `/canastas`, `/comparacion`, `/complemento`, `/prim`, `/nodos-quiebre`, `/polinomio`, `/metricas` y los que usa el frontend) y sus tests | Claude | `backend/app/main.py` y `backend/tests/test_api.py` |
-| **Frontend** | Estructura con Tailwind y shadcn/ui, diseño estilo plataforma de trading, selectores de umbral y fecha con *debounce*, lista de acciones por canasta, gráficos, pestañas de comparación y métricas del modelo, y la explicación en lenguaje llano dentro de la web | Claude | `frontend/src/` |
-| **Notebooks** | Los cuatro notebooks de `notebooks/`, escritos con el estilo de las clases de Machine Learning | Claude | `notebooks/` |
-| **Análisis y verificaciones** | Comprobar el gap con datos reales, medir cómo cambia el número de canastas en la crisis de 2020, probar el README en un clon limpio del repositorio | Claude | Secciones 4.2 y 6, `README.md` |
-| **Documentación** | README, borrador del informe, respuestas de `preguntas-informe.md` y la mejora de la redacción de este documento | Claude | `README.md`, `informe/`, `documentacion/` |
-| **Gestión del repositorio** | Mensajes de commit, comentarios al cerrar issues y el cambio de nombre del repositorio | Claude, con nuestra aprobación en cada paso | Historial de commits e issues |
+| Etapa | Qué se hizo con IA | Dónde queda registrado |
+|---|---|---|
+| **Planteo del problema** | Investigación del tema base y de proyectos existentes (Gemini). Después, trabajar la idea con Claude hasta llegar a una propuesta bien planteada | `PROPUESTA.md` (commits del 20/10) |
+| **Descarga y dataset por pares** | Script de `yfinance`, features rodantes y el test anti-fuga | Decisiones 12 a 14 |
+| **Modelos** | Partición temporal, validación con gap y comparación contra el baseline `corr_90d` | Decisiones 19 a 21 |
+| **Grafo de conflicto** | Clase `GrafoConflicto` con matriz de adyacencia y fuentes de pesos intercambiables | Decisión 22 |
+| **Algoritmos de grafos** | Coloreo greedy por grado, DSATUR, bipartito, complemento, nodos de quiebre, Prim y polinomio cromático, con sus tests | Decisiones 23 a 25 |
+| **Evaluación de canastas** | Modelo contra `corr_90d` y azar con varias semillas, y coloreo con pesos | Decisión 26 |
+| **API** | Endpoints de FastAPI y sus tests | `backend/app/main.py`, `backend/tests/test_api.py` |
+| **Frontend** | Estructura con Tailwind y shadcn/ui, diseño estilo plataforma de trading, selectores de umbral y fecha con *debounce*, lista de acciones por canasta, gráficos, pestañas de comparación y métricas, grafo animado estilo Obsidian, árbol mínimo, nodos de quiebre y polinomio, y la explicación en lenguaje llano dentro de la web | `frontend/src/`, decisión 28 |
+| **Notebooks** | Los cuatro notebooks, escritos con el estilo de las clases de Machine Learning | `notebooks/` |
+| **Análisis y verificaciones** | Comprobar el gap con datos reales, medir cómo cambia el número de canastas en la crisis de 2020 y probar el README en un clon limpio del repositorio | Secciones 4.2 y 6, `README.md` |
+| **Documentación** | `decisiones.md`, `preguntas-informe.md`, `ACCIONES.md`, el README, el borrador del informe y su redacción | `documentacion/`, `README.md`, `informe/` |
+| **Planificación** | Armar los issues, los hitos con sus fechas y el reparto de tareas entre los dos | Issues y milestones del repositorio |
+| **Gestión del repositorio** | Mensajes de commit, comentarios al cerrar issues y el cambio de nombre del repositorio | Historial de commits e issues |
 
 Una aclaración sobre los commits: algunos llevan la línea de coautoría de Claude y otros no. Por eso la ausencia de esa línea en un commit no significa que no se haya usado IA; el registro completo es esta sección.
 
-### 10.4 Qué hicimos nosotros y para qué no usamos IA
+### 10.4 Qué decidimos y hicimos nosotros
 
-- **Elegimos el tema y conseguimos la aprobación** del tema propio con los docentes.
-- **Aprobamos cada paso que modificaba el repositorio:** en la parte de la API, el frontend y el informe, los commits y los `push` los hicimos nosotros, y la IA consultaba antes de cerrar issues, borrar archivos o renombrar el repositorio. **[CONFIRMAR: cómo fue en la parte de grafos.]**
-- **Sacamos las capturas del frontend** con la aplicación funcionando.
-- **Contrastamos los resultados** que informamos con los archivos que generan los scripts (`data/metricas.json`, `data/evaluacion_canastas.csv`).
-- **Elegimos las 30 acciones sin IA**, por ser acciones conocidas.
-- **Elegimos `SPY` como referencia del mercado** porque es conocido en el ámbito financiero, tiene mucho renombre y es donde invierte la mayoría de la gente.
-- **Investigamos nosotros si Yahoo Finance tenía una API** para obtener los datos de las acciones.
-- **El conocimiento base de Machine Learning** lo traíamos de la escuela; no salió de la IA.
-- **Manuel eligió la ventana de 90 días** para la volatilidad y el beta (decisión 15).
-- **[COMPLETAR: otras decisiones o partes hechas sin IA.]**
+Lo siguiente lo decidimos o hicimos nosotros, sin delegarlo:
+
+- **El tema del proyecto**, que después trabajamos con Claude hasta llegar a una propuesta bien planteada (`PROPUESTA.md`, 20/10), y la **aprobación del tema propio** por parte de los docentes.
+- **Las 30 acciones y los sectores.** Elegimos las acciones por ser conocidas y editamos `sectores.csv` a mano.
+- **`SPY` como referencia del mercado** (el cambio de `^GSPC` a `SPY`, decisión 11), porque es conocido en el ámbito financiero, tiene mucho renombre y es donde invierte la mayoría de la gente.
+- **La investigación sobre Yahoo Finance:** averiguamos nosotros si tenía una API para obtener los datos de las acciones.
+- **La ventana de 90 días** para la volatilidad y el beta, que eligió Manuel (decisión 15).
+- **Qué features implementar y en qué orden.** Pegábamos cada ítem de la lista de tareas como prompt.
+- **Las librerías permitidas** (numpy, pandas, matplotlib, scikit-learn). Por eso se reemplazó `networkx` en `app/` por `matplotlib` (decisión 27).
+- **Cómo trabajar entre los dos.** Como ya trabajamos mucho juntos, definimos pautas para facilitar la cooperación: documentar cada decisión y pedirle a la IA cosas que ya conocemos, por ejemplo la estética de grafo de Obsidian.
+- **Reducir lo desconocido y movernos dentro del entorno que nos dieron los profes.** El conocimiento base de Machine Learning lo traíamos de la escuela. Hicimos notebooks como los del curso de ML para que se comprenda mejor el código, y una interfaz parecida a los ejercicios de coloreo que resolvimos en clase, pero más linda.
+- **Tener las suites de tests necesarias** para detectar errores de código.
+- **La revisión de cada cambio y los commits chicos.** En la API, el frontend y el informe, los commits y los `push` los hicimos nosotros, y la IA consultaba antes de cerrar issues, borrar archivos o renombrar el repositorio. En la parte de grafos, Claude Code hacía los commits cuando se lo pedíamos.
+- **Las capturas del frontend** con la aplicación funcionando, y el **contraste de los resultados** informados con los archivos que generan los scripts (`data/metricas.json`, `data/evaluacion_canastas.csv`).
 
 ### 10.5 Ejemplos concretos de prompts útiles
 
-**[COMPLETAR/CONFIRMAR]** Algunos pedidos reales que nos resultaron útiles:
-
-- *"quiero que la web tenga una vista como si fuera de trading view, además de que use componentes de shadcn"*: definió el diseño de toda la pantalla.
-- *"no termino de entender para qué sirve esa gráfica"* y después *"explicá eso dentro de la web"*: llevó a explicar el umbral con la analogía de repartir invitados en mesas, e incluirla en la aplicación.
-- *"revisá si cumple con este enunciado en donde están las pautas"*: sirvió para auditar el trabajo contra la consigna y detectar lo que faltaba (la sección de IA y las capturas).
-- *"el umbral entonces, ¿para qué sirve bien?"*: derivó en comparar canastas para distintos umbrales con datos reales.
+1. **Pasar el enunciado de la tarea tal cual y pedir preguntas antes de hacer nada:** *"Tenemos que implementar esto ahora, haceme todas las preguntas que necesites, explicame qué hiciste: [lista de la tarea de coloreo greedy]"*. Evitó suposiciones sobre el diseño.
+2. **Pedir una verificación del trabajo contra lo pedido:** *"¿Cumpliste con todo lo que te pedí en el prompt anterior? Haceme una lista de cómo lo resolviste"*. Sirvió para detectar faltantes.
+3. **Pedir que compare con alternativas:** *"Armá la tabla comparativa, quiero saber más sobre el test de bipartito, ¿qué significa que no se cumpla en general?"*. De ahí salió `comparacion_coloreo.md` (greedy contra DSATUR).
+4. **Pedir una explicación antes de aceptar el código:** *"Explicame en qué consiste la implementación tuya de esta feature"* y *"¿Qué es el d de Prim?"*. Necesario para poder defender el trabajo oralmente.
+5. **Preguntar por el comportamiento esperado:** *"¿Qué tendría que pasar cuando tengo un theta muy bajo o muy alto? ¿Y cuando tengo una fecha de crisis?"*. De ahí salió un hallazgo para el informe (sección 6).
+6. **Fijar restricciones:** *"Usemos siempre numpy, pandas y matplotlib"* y *"Hacé la estética del grafo oscilante como los grafos de bóvedas en Obsidian"*.
+7. **Registrar mientras se trabaja:** *"Anotá lo que hiciste"* y *"anotalo en preguntas-informe"*. Así las decisiones quedaron documentadas con la fecha.
+8. **Definir el diseño de la pantalla:** *"quiero que la web tenga una vista como si fuera de trading view, además de que use componentes de shadcn"*.
+9. **Pedir que la explicación esté en la aplicación:** ante un gráfico que no se entendía, *"explicá eso dentro de la web"*. Llevó a explicar el umbral con la analogía de repartir invitados en mesas.
+10. **Auditar el trabajo contra la consigna:** *"revisá si cumple con este enunciado en donde están las pautas"*. Sirvió para detectar lo que faltaba (la sección de IA y las capturas).
 
 ### 10.6 Casos en que la IA se equivocó y cómo nos dimos cuenta
 
-**[REVISAR]** Casos reales de este trabajo:
-
-1. **Tomó un issue que no nos tocaba.** Al pedirle que hiciera los issues vencidos, empezó por uno asignado a otro integrante (el coloreo greedy). Lo notamos nosotros al ver que no era nuestro, y se descartó ese trabajo.
-2. **Una frase del informe afirmaba que en una crisis el número de canastas sube.** Al medirlo en las 111 fechas de corte, se cumplía con la correlación histórica (de 7 a 22 canastas en marzo de 2020) pero no con el modelo (se queda en 3). Se corrigió el texto y pasó a ser un hallazgo del informe (sección 6).
-3. **Un porcentaje mal leído en `decisiones.md`.** Decía que el greedy usa más de 2 colores en bipartitos "27 % a 68 %"; al armar el informe se recalculó con la tabla y era 13 % a 68 %.
-4. **Decir que el gap de 3 cortes "hacía falta".** Al comprobarlo con datos reales (sección 4.2) se vio que el mínimo es 2 y que 3 es una elección conservadora. Se corrigió la redacción.
+1. **Test con valor esperado equivocado (5/11).** Claude armó los tests de la construcción del grafo y uno falló: esperaba una arista A-C con ρ = 0,5 y θ = 0,5, pero la arista exige ρ > θ estricto, así que no existe. Lo detectó `pytest` al correrlo, Claude reconoció que el error estaba en el test y no en el código, y corrigió lo esperado. Se anotó la regla de la desigualdad estricta en la decisión 22.
+2. **Se implementó sin la lista completa (6/11).** Claude implementó una feature a partir de un pedido incompleto (nos habíamos olvidado de pegar la lista). Lo notamos al leer el resumen y pedimos *"borrá los cambios que hiciste después del commit"*. Fue un error nuestro de prompt, pero muestra que Claude avanza con lo que tiene en vez de frenar. Después pegamos siempre la lista completa.
+3. **Tomó un issue que no nos tocaba.** Al pedirle que hiciera los issues vencidos, empezó por uno asignado al otro integrante (el coloreo greedy). Lo notamos al ver que no era nuestro y se descartó ese trabajo.
+4. **Interfaces iniciales difíciles de entender.** Las primeras interfaces que generó la IA eran confusas para nosotros, y hubo que corregirlas hasta que fueran legibles, aunque quedaran más pesadas para la computadora. Lo notamos al probarlas a mano y tratar de explicarlas, algo que tenemos que poder hacer en la defensa oral.
 5. **Un layout que tapaba las tablas.** Las pestañas de comparación y de métricas se montaban sobre el panel de explicación y ocultaban filas. Lo detectamos en las capturas y se corrigió.
-6. **Comandos de terminal que no funcionaban.** Un comando para apagar los servidores estaba mal armado y no los apagaba; lo notamos porque seguían corriendo.
+6. **Una frase del informe afirmaba que en una crisis el número de canastas sube.** Al medirlo en las 111 fechas de corte, se cumplía con la correlación histórica (de 7 a 22 canastas en marzo de 2020) pero no con el modelo (se queda en 3). Se corrigió el texto y pasó a ser un hallazgo del informe (sección 6).
+7. **Un porcentaje mal leído en `decisiones.md`.** Decía que el greedy usa más de 2 colores en bipartitos "27 % a 68 %"; al armar el informe se recalculó con la tabla y era 13 % a 68 %.
+8. **Decir que el gap de 3 cortes "hacía falta".** Al comprobarlo con datos reales (sección 4.2) se vio que el mínimo es 2 y que 3 es una elección conservadora. Se corrigió la redacción.
+9. **Documentación en el lugar equivocado (8/11).** Al registrar la estética del grafo, Claude escribió el texto fuera de la decisión que correspondía. Lo vio al releer el archivo y lo movió. Lección: revisar los `.md` igual que el código.
+10. **Un archivo de prueba que no corría (5/11).** Nuestro script `probar_grafo.py` fallaba. Claude creó una versión corregida y dejó el original, porque el sistema bloqueó el borrado de un archivo nuestro, así que quedaron dos copias. Se limpió después: hoy ya no queda ninguna en el repositorio.
+11. **README incompleto (8/11).** Al levantar el frontend y el backend siguiendo solo el README, vimos que faltaba el paso de entrenar el modelo. Sin ese paso la aplicación no iba a funcionar cuando la probaran los profes. Lo corregimos en el README.
+
+**Controles que evitaron conclusiones falsas** (no son errores de la IA, pero conviene registrarlos):
+
+- El test de fuga (decisión 14) se verificó metiendo una fuga a propósito para comprobar que el test falla. Un test que nunca falla no prueba nada.
+- La comparación del modelo contra `corr_90d` a igual θ **no es justa**: el modelo predice correlaciones comprimidas hacia la media, genera grafos más ralos y usa menos canastas (3,3 contra 6,9 con θ = 0,5), lo que empeora su métrica (decisión 26). Y en una fecha de crisis el modelo casi no reacciona, mientras que la histórica sí. Esto salió al preguntarle a Claude qué debería pasar y contrastarlo con los datos.
 
 ### 10.7 Reflexión
 
-**[COMPLETAR: la escriben los integrantes.]** La consigna pide una reflexión breve: en qué nos ayudó la IA y en qué no.
+Claude nos permitió llegar a un trabajo más completo del que habríamos hecho solos en el tiempo disponible: además de lo obligatorio, quedaron DSATUR, el polinomio cromático, Prim, la API y una interfaz interactiva. Nosotros nos ocupamos de planear, testear y revisar; la IA implementaba. Para no perder el control, pedimos explicaciones, hicimos que los algoritmos de grafos se implementaran a mano (los pide la materia) y los contrastamos con `networkx` en los tests.
+
+Los errores que aparecieron fueron de criterio más que de sintaxis: un caso borde mal calculado, una interfaz confusa, un pedido incompleto que se ejecutó igual. Los atajaron los tests y la lectura crítica. Lo más difícil al trabajar con una IA no es la implementación, sino explicar bien el problema y la solución como los necesita el usuario. La IA no reemplaza saber qué se está midiendo ni poder defenderlo oralmente.
 
 ---
 

@@ -1,10 +1,13 @@
 # Uso de inteligencia artificial en el TP
 
+> Este documento es el detalle de la sección 10 del informe (`informe.md`), que lo integra junto con el resto del trabajo.
+
 ## 1. Herramientas usadas
 
 - **Claude Code** (CLI de Anthropic, modelos Claude), corriendo dentro del repo. Leía y editaba archivos, ejecutaba `pytest` y los scripts, y hacía los commits cuando se lo pedíamos.
 - **Archivo `CLAUDE.md`** con las reglas del dominio (sin fuga de información, split temporal, algoritmos de grafos a mano, librerías permitidas), para que respetara las restricciones del TP en cada sesión. Está en `.gitignore` (decisión 9).
 - **Memoria de Claude Code**: quedó guardada la regla de usar solo numpy, pandas, matplotlib y sklearn.
+- **Gemini** (Google), para investigar el tema base y qué proyectos parecidos existían en la red, antes de trabajarlo con Claude.
 
 ## 2. Para qué partes sí y para cuáles no
 
@@ -14,14 +17,14 @@
 |---|---|
 | Descarga y dataset por pares | Script de `yfinance`, features rodantes y el test anti-fuga (decisión 14) |
 | Modelos | Split temporal, validación con gap, comparación contra el baseline `corr_90d` |
-| Grafo de conflicto | Clase `GrafoConflicto` con matriz de adyacencia y fuentes de pesos intercambiables (decisión 13) |
-| Algoritmos de grafos | Coloreo greedy por grado, DSATUR, bipartito, complemento, nodos de quiebre, Prim y polinomio cromático, con sus tests (decisiones 15 a 18) |
+| Grafo de conflicto | Clase `GrafoConflicto` con matriz de adyacencia y fuentes de pesos intercambiables (decisión 22) |
+| Algoritmos de grafos | Coloreo greedy por grado, DSATUR, bipartito, complemento, nodos de quiebre, Prim y polinomio cromático, con sus tests (decisiones 23 a 25) |
 | Evaluación de canastas | Modelo vs `corr_90d` vs azar con varias semillas (decisión 26) |
 | API y frontend | Endpoints FastAPI, interfaz React con grafo animado estilo Obsidian, MST, quiebre y polinomio |
 | Documentación | `decisiones.md`, `preguntas-informe.md`, `ACCIONES.md`, y este documento |
 **Lo decidimos nosotros, sin delegarlo:**
 
-- El tema y el diseño del proyecto (`PROPUESTA.md`, 20/10, antes de la primera sesión con Claude).
+- El tema del proyecto, que después trabajamos con Claude hasta llegar a una propuesta bien planteada (`PROPUESTA.md`, 20/10), y su aprobación por parte de los docentes.
 - La elección final de las acciones y de los sectores (editamos `sectores.csv` a mano) y el cambio de `^GSPC` a `SPY` por confianza en el instrumento (decisión 11).
 - Qué features implementar y en qué orden: pegábamos cada ítem de la lista de tareas como prompt.
 - Las librerías permitidas (numpy, pandas, matplotlib, sklearn). Esto hizo que se reemplazara `networkx` en `app/` por `matplotlib` (decisión 27).
@@ -36,17 +39,17 @@
 2. **Pedir una verificación del trabajo contra lo pedido**: *"¿Cumpliste con todo lo que te pedí en el prompt anterior? Haceme una lista de cómo lo resolviste"*. Sirvió para detectar faltantes.
 3. **Pedir que compare con alternativas**: *"Armá la tabla comparativa, quiero saber más sobre el test de bipartito, ¿qué significa que no se cumpla en general?"*. Salió `comparacion_coloreo.md` (greedy vs DSATUR).
 4. **Pedir una explicación antes de aceptar el código**: *"Explicame en qué consiste la implementación tuya de esta feature"* y *"¿Qué es el d de Prim?"*. Necesario para poder defender el TP oralmente.
-5. **Preguntar por el comportamiento esperado**: *"¿Qué tendría que pasar cuando tengo un theta muy bajo o muy alto? ¿Y cuando tengo una fecha de crisis?"*. De ahí salió un hallazgo para el informe (ver sección 4, punto 4).
+5. **Preguntar por el comportamiento esperado**: *"¿Qué tendría que pasar cuando tengo un theta muy bajo o muy alto? ¿Y cuando tengo una fecha de crisis?"*. De ahí salió un hallazgo para el informe (ver «Controles» al final de la sección 4).
 6. **Fijar restricciones**: *"Usemos siempre numpy, pandas y matplotlib"* y *"Hacé la estética del grafo oscilante como los grafos de bóvedas en Obsidian"*.
 7. **Registrar mientras se trabaja**: *"Anotá lo que hiciste"* y *"anotalo en preguntas-informe"*. Así las decisiones quedaron documentadas con la fecha.
 
 ## 4. Casos donde la IA se equivocó y cómo nos dimos cuenta
 
-1. **Test con valor esperado equivocado (5/11).** Claude armó los tests de la construcción del grafo y uno falló: esperaba una arista A-C con ρ = 0,5 y θ = 0,5, pero la arista exige ρ > θ estricto, así que no existe. Lo detectó `pytest` al correrlo, Claude reconoció que el error estaba en el test y no en el código, y corrigió lo esperado. Se anotó la regla de la desigualdad estricta en la decisión 13.
+1. **Test con valor esperado equivocado (5/11).** Claude armó los tests de la construcción del grafo y uno falló: esperaba una arista A-C con ρ = 0,5 y θ = 0,5, pero la arista exige ρ > θ estricto, así que no existe. Lo detectó `pytest` al correrlo, Claude reconoció que el error estaba en el test y no en el código, y corrigió lo esperado. Se anotó la regla de la desigualdad estricta en la decisión 22.
 2. **Documentación en el lugar equivocado (8/11).** Al registrar la estética del grafo, Claude escribió el texto fuera de la decisión que correspondía. Lo vio al releer el archivo y lo movió. Lección: revisar los `.md` igual que el código.
 3. **Se implementó sin la lista completa (6/11).** Claude implementó una feature a partir de un pedido incompleto (nos habíamos olvidado de pegar la lista). Lo notamos al leer el resumen y pedimos *"borrá los cambios que hiciste después del commit"*. Fue un error nuestro de prompt, pero muestra que Claude avanza con lo que tiene en vez de frenar. Después pegamos siempre la lista completa.
 4. **Interfaces iniciales difíciles de entender.** Las primeras interfaces que generó la IA eran confusas para nosotros, y hubo que corregirlas hasta que fueran legibles, aunque quedaran más pesadas para la computadora. Lo notamos al probarlas a mano y tratar de explicarlas, algo que tenemos que poder hacer en la defensa oral.
-5. **Archivo de prueba que no corría (5/11).** Nuestro script `probar_grafo.py` fallaba. Claude creó una versión corregida en `backend/` y dejó el original, porque el sistema bloqueó el borrado de un archivo nuestro. Hay que borrar `backend/tests/probar_grafo.py` para que `pytest` no lo confunda con un test.
+5. **Archivo de prueba que no corría (5/11).** Nuestro script `probar_grafo.py` fallaba. Claude creó una versión corregida y dejó el original, porque el sistema bloqueó el borrado de un archivo nuestro, así que quedaron dos copias. Se limpió después: hoy ya no queda ninguna en el repositorio.
 6. **README incompleto (8/11).** Al levantar el frontend y el backend siguiendo solo el README, vimos que faltaba el paso de entrenar el modelo en la secuencia de comandos. Sin ese paso la app no iba a funcionar cuando la probaran los profes. Lo corregimos en el README.
 
 **Controles que evitaron conclusiones falsas** (no son errores de la IA, pero conviene registrarlos):
