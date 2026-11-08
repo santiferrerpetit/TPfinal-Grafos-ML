@@ -210,3 +210,14 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 - **Estética tipo Obsidian (agregado):** la simulación de `d3-force` ya no se resuelve de una vez: corre en vivo y se queda con un `alphaTarget` chico (0,012) para que los nodos floten con un vaivén suave; con `prefers-reduced-motion` se frena. Los nodos se arrastran y arrastran a sus vecinos (al soltarlos vuelven los resortes), la rueda hace zoom hacia el cursor, el fondo se desplaza arrastrando, el tamaño del nodo crece con la cantidad de conflictos y al pasar el mouse por un nodo se atenúa todo menos él y sus vecinos. Al cambiar θ o de vista los nodos arrancan desde donde estaban y se acomodan moviéndose. Las posiciones se escriben directo en el SVG (no se re-renderiza React en cada cuadro).
 - **Uso de IA:** hecho con Claude; registrar en el informe.
 
+
+## 29. Extras sobre el grafo: árbol mínimo, nodos de quiebre y polinomio cromático
+
+- **Fecha:** 2026-11-08.
+- **Decisión:** en la pestaña "Grafo" se suman dos capas que se prenden con botones (`Árbol mínimo`, `Nodos de quiebre`) y un panel de polinomio cromático. Todo se apoya en endpoints que ya existían (`/prim`, `/nodos-quiebre`, `/polinomio`); el trabajo fue solo de frontend (`GrafoCanastas.tsx`, `PolinomioPanel.tsx`, `api.ts`, `lib/layout.ts`).
+- **Árbol mínimo:** las 29 uniones del MST sobre d = √(2(1−ρ)) se dibujan en amarillo encima del grafo, con la distancia total debajo. Como el MST no depende de θ, conecta pares que no son arista de conflicto. Con la capa activa, esas uniones también actúan como resortes más suaves en el layout, para que se vea como árbol y no como líneas cruzadas.
+- **Nodos de quiebre:** los que, al sacarlos, dejan más componentes en el grafo de conflicto (k(G−v) > k(G)) llevan un aro amarillo punteado y se listan debajo. Con θ bajo el grafo es muy denso y casi nunca hay (con θ = 0,25 no hubo ninguno); con θ intermedio, como 0,39, aparecen (en la prueba: JNJ y PG).
+- **Polinomio cromático:** el panel calcula P(G, λ) de la **componente conexa de la acción seleccionada**, no del grafo entero, porque el cálculo es exponencial. Si la componente tiene más de 20 aristas (el tope del backend) no se pide y se explica por qué. Muestra el polinomio factorizado en potencias, χ(G) exacto (el menor k con P(G, k) > 0) y compara con los colores que usó el greedy en esa componente. Prueba: camino de 3 acciones → λ³ − 2λ² + λ, χ = 2, greedy 2.
+- **Layout según densidad:** con θ bajo (300 aristas) los resortes juntaban todo en un punto; ahora se aflojan y se repele más según la cantidad de aristas por nodo.
+- **Limitación:** la rueda del mouse hace zoom sobre el grafo y no desplaza la página; para bajar a los paneles hay que scrollear con el mouse fuera del grafo (por ejemplo por el margen izquierdo).
+- **Uso de IA:** hecho con Claude; registrar en el informe.
