@@ -26,7 +26,7 @@ Un coloreo óptimo usa siempre 2 colores.
 
 ## Datos reales (111 fechas de corte, 30 acciones)
 
-Con la fuente `corr_90d` (la del modelo todavía no está lista) y con `azar`.
+Con las fuentes `corr_90d` y `azar`. La fuente del modelo se evalúa aparte, en [evaluacion_canastas.md](evaluacion_canastas.md).
 
 | fuente | θ | aristas (media) | greedy (media) | DSATUR (media) | fechas donde DSATUR usa menos | fechas donde usa más |
 |---|---|---|---|---|---|---|

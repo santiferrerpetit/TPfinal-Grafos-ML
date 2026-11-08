@@ -6,7 +6,7 @@ Integrantes: **Manuel García de la Vega y Santiago Ferrer Petit**
 Fecha de entrega: 08/11/2026
 Repositorio: https://github.com/santiferrerpetit/diversificacion-carteras
 
-> **Estado: borrador.** El punto marcado con **[REVISAR]** necesita una decisión de los integrantes: queda en la sección 7 (si se compara con clustering). Todos los números salen de `data/metricas.json`, `data/evaluacion_canastas.csv` y los notebooks de `notebooks/`, y se regeneran con los scripts indicados al final.
+> Todos los números de este informe salen de `data/metricas.json`, `data/evaluacion_canastas.csv` y los notebooks de `notebooks/`, y se regeneran con los scripts indicados al final.
 
 ---
 
@@ -293,7 +293,9 @@ Se podrían armar canastas sin grafos, por ejemplo con clustering jerárquico so
 - **Parámetro interpretable.** θ se lee directamente ("no quiero pares con correlación mayor a 0,5"), y el resultado cambia de forma explicable al moverlo.
 - **Herramientas adicionales sobre el mismo objeto:** polinomio cromático, complemento, nodos de quiebre y árbol recubridor mínimo responden preguntas que el clustering no.
 
-Dos salvedades honestas: el greedy es una heurística y puede usar más canastas que el mínimo (χ), y **no implementamos ni comparamos empíricamente** un método de clustering, así que esta sección es un argumento y no un resultado medido. **[REVISAR: decidir si se agrega una comparación con clustering o se deja como argumento.]**
+Dos salvedades honestas: el greedy es una heurística y puede usar más canastas que el mínimo (χ), y **no implementamos ni comparamos empíricamente** un método de clustering, así que esta sección es un argumento y no un resultado medido.
+
+Lo dejamos como argumento a propósito: el clustering no aplica ningún contenido de la materia Lógica y Teoría de Grafos, y este trabajo busca justamente integrar un modelo de Machine Learning con los algoritmos de grafos que vimos en la materia. Comparar con clustering queda como posible extensión (sección 11).
 
 ---
 

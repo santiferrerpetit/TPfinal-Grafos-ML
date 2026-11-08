@@ -106,7 +106,7 @@ if __name__ == "__main__":
         f"## Grafos bipartitos al azar de 15+15 nodos ({N_GRAFOS} por fila)\n\n"
         f"Un coloreo óptimo usa siempre 2 colores.\n\n{bipartitos_al_azar()}\n"
         f"## Datos reales ({n_fechas} fechas de corte, 30 acciones)\n\n"
-        "Con la fuente `corr_90d` (la del modelo todavía no está lista) y con `azar`.\n\n"
+        "Con las fuentes `corr_90d` y `azar`. La fuente del modelo se evalúa aparte, en [evaluacion_canastas.md](evaluacion_canastas.md).\n\n"
         f"{reales}"
     )
     print(salida)

@@ -136,7 +136,7 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
   Las tres devuelven el mismo tipo de objeto, así que el coloreo y la evaluación no saben de dónde vinieron los pesos. Comparar fuentes es cambiar un string.
 - **Casos borde:** un par sin dato (falta la fila o ρ es NaN) no es arista, porque `NaN > θ` es falso. Si la fecha de corte no existe, la fuente es desconocida o falta la columna, se lanza `ValueError` con un mensaje claro.
 - **Limitación conocida:** con `"azar"` la cantidad de aristas depende solo de θ (cerca de (1-θ)/2 de los pares), mientras que con el modelo depende de las correlaciones reales, que son casi todas positivas. A igual θ el azar tendrá un grafo con densidad distinta. Si en la comparación eso molesta, una alternativa es permutar al azar los ρ del modelo (misma distribución, pares mezclados); queda para decidir cuando se evalúe el coloreo.
-- **Uso de IA:** esta pieza se hizo con Claude (diseño de la clase, código y tests); registrar en el informe.
+- **Uso de IA:** esta pieza se hizo con Claude (diseño de la clase, código y tests); registrado en la sección 10 del informe.
 
 ## 23. Coloreo greedy por grado y variantes
 
@@ -149,7 +149,7 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 - **Hallazgo importante: el greedy por grado NO garantiza 2 colores en un bipartito.** Es una heurística: siempre da un coloreo propio, pero puede usar más de χ(G). Ejemplo en el test: grafo corona de 8 nodos (bipartito, todos de grado 3) con los nodos intercalados: el greedy usa 4 colores y DSATUR 2. Los tests de "bipartito ⇒ 2 colores" valen para casos concretos (caminos, ciclos pares, K_{m,n}, estrellas) y no como propiedad general. En el informe hay que decirlo; para el chequeo exacto en bipartitos se usa el algoritmo de clase o DSATUR.
 - **Tests:** sin aristas ⇒ 1 color; K_n ⇒ n colores (n = 1, 2, 3, 5, 8, 30); ciclo impar ⇒ 3; χ = máx de las componentes; el coloreo es siempre propio y usa a lo sumo Δ+1 colores en grafos al azar; nunca usa menos colores que la clique máxima (calculada con `networkx`).
 - **Pendiente:** contrastar con χ por polinomio cromático en grafos chicos (hecho en la decisión 25).
-- **Uso de IA:** diseño, código y tests hechos con Claude; registrar en el informe.
+- **Uso de IA:** diseño, código y tests hechos con Claude; registrado en la sección 10 del informe.
 - **Comparación de variantes (agregado):** `python -m scripts.comparar_coloreos` (desde `backend/`) genera [comparacion_coloreo.md](comparacion_coloreo.md). Resumen: DSATUR usa casi siempre igual o menos colores que el greedy por grado; en bipartitos al azar el greedy usa más de 2 colores en 13% a 68% de los casos y DSATUR en ninguno; sobre los datos reales con `corr_90d` la diferencia es mínima (7,69 vs 7,64 canastas con θ = 0,5). Por eso mantenemos el greedy por grado como algoritmo principal (es el que pide la materia) y DSATUR como comparación.
 
 ## 24. Algoritmos de grafos extra: bipartición, complemento, quiebre y Prim
@@ -159,7 +159,7 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 - **Prim:** parte de `pesos` (todos los pares), no de `adyacencia`, porque el árbol conecta todas las acciones sin depender de θ. Un ρ NaN se ignora; si faltan datos y queda desconectado, devuelve un bosque. ρ se acota a [−1, 1] antes de la raíz por seguridad numérica.
 - **Nodo aislado:** no es de quiebre, porque al sacarlo k baja.
 - **Tests:** `backend/tests/test_algoritmos.py`, contrastando con `networkx` (`is_bipartite`, `complement`, `articulation_points` en conexos, peso total del MST).
-- **Uso de IA:** código y tests hechos con Claude; registrar en el informe.
+- **Uso de IA:** código y tests hechos con Claude; registrado en la sección 10 del informe.
 
 ## 25. Polinomio cromático y contraste del greedy con χ
 
@@ -168,7 +168,7 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 - **Solo grafos chicos:** el costo es exponencial en las aristas, así que `polinomio_cromatico` lanza `ValueError` con más de 20 aristas. No se aplica al grafo real de 30 acciones, sino a subgrafos chicos o grafos de prueba.
 - **Tests (`test_cromatico.py`):** fórmulas conocidas (camino, ciclo, K_n, sin aristas), producto por componentes, coincidencia con fuerza bruta (conteo de coloreos propios con k colores) y χ de casos conocidos.
 - **Greedy vs χ:** en 60 grafos al azar de 8 nodos (p = 0,4) el greedy por grado usó exactamente χ en 58 y más en 2; nunca menos. Es la confirmación empírica de que es una heurística; el contraejemplo determinista es la corona (bipartito, χ = 2, greedy usa más).
-- **Uso de IA:** código y tests hechos con Claude; registrar en el informe.
+- **Uso de IA:** código y tests hechos con Claude; registrado en la sección 10 del informe.
 
 ## 26. Evaluación de las canastas en test (modelo vs corr_90d vs azar)
 
@@ -191,13 +191,13 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 - **Idea extra (pesos):** `greedy_por_grado_con_pesos` en `coloreo.py` mantiene el orden por grado pero, entre los colores ya abiertos que ningún vecino usa, elige el de menor suma de ρ̂ con sus miembros. Siempre da coloreo propio. Mejora levemente la correlación real frente al greedy común del modelo (p. ej. 0,270 vs 0,278 con θ = 0,5) sin usar más canastas. Tests en `tests/test_evaluacion.py`.
 - **Refactor menor:** `matriz_desde_columna` en `construccion.py` (la usa `matriz_de_pesos` y el script para armar la matriz real).
 - **Archivos generados:** `data/modelo.joblib` se regeneró con `scripts.entrenar_modelo`; no se versiona.
-- **Uso de IA:** código, análisis y tests hechos con Claude; registrar en el informe.
+- **Uso de IA:** código, análisis y tests hechos con Claude; registrado en la sección 10 del informe.
 
 ## 27. networkx fuera del código de la app
 
 - **Fecha:** 2026-11-05.
 - **Decisión:** se reemplazó `GrafoConflicto.a_networkx()` por `dibujar()`, que grafica con matplotlib (nodos en círculo calculado con numpy, grosor de arista según ρ, color de nodo según canasta si se pasa `colores`). Por la regla de usar solo numpy, pandas, matplotlib y sklearn, `app/` ya no importa `networkx`; queda únicamente en los tests y en `scripts/comparar_coloreos.py` para contrastar y generar grafos al azar.
-- **Uso de IA:** hecho con Claude; registrar en el informe.
+- **Uso de IA:** hecho con Claude; registrado en la sección 10 del informe.
 
 ## 28. Visualización del grafo coloreado en el frontend
 
@@ -208,7 +208,7 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 - **Layouts:** en Conflicto, fuerzas con las aristas como resortes (las que se llevan mal quedan cerca). En Complemento, racimos por canasta: cada canasta es un conjunto independiente en el grafo original, o sea una clique en el complemento, y así se ve. Las aristas entre canastas distintas quedan de fondo.
 - **Ajuste de layout de la página:** el panel central pasó a tener scroll vertical y la pestaña Grafo pide más alto, porque en el alto original el grafo salía diminuto.
 - **Estética tipo Obsidian (agregado):** la simulación de `d3-force` ya no se resuelve de una vez: corre en vivo y se queda con un `alphaTarget` chico (0,012) para que los nodos floten con un vaivén suave; con `prefers-reduced-motion` se frena. Los nodos se arrastran y arrastran a sus vecinos (al soltarlos vuelven los resortes), la rueda hace zoom hacia el cursor, el fondo se desplaza arrastrando, el tamaño del nodo crece con la cantidad de conflictos y al pasar el mouse por un nodo se atenúa todo menos él y sus vecinos. Al cambiar θ o de vista los nodos arrancan desde donde estaban y se acomodan moviéndose. Las posiciones se escriben directo en el SVG (no se re-renderiza React en cada cuadro).
-- **Uso de IA:** hecho con Claude; registrar en el informe.
+- **Uso de IA:** hecho con Claude; registrado en la sección 10 del informe.
 
 
 ## 29. Extras sobre el grafo: árbol mínimo, nodos de quiebre y polinomio cromático
@@ -220,4 +220,4 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 - **Polinomio cromático:** el panel calcula P(G, λ) de la **componente conexa de la acción seleccionada**, no del grafo entero, porque el cálculo es exponencial. Si la componente tiene más de 20 aristas (el tope del backend) no se pide y se explica por qué. Muestra el polinomio factorizado en potencias, χ(G) exacto (el menor k con P(G, k) > 0) y compara con los colores que usó el greedy en esa componente. Prueba: camino de 3 acciones → λ³ − 2λ² + λ, χ = 2, greedy 2.
 - **Layout según densidad:** con θ bajo (300 aristas) los resortes juntaban todo en un punto; ahora se aflojan y se repele más según la cantidad de aristas por nodo.
 - **Limitación:** la rueda del mouse hace zoom sobre el grafo y no desplaza la página; para bajar a los paneles hay que scrollear con el mouse fuera del grafo (por ejemplo por el margen izquierdo).
-- **Uso de IA:** hecho con Claude; registrar en el informe.
+- **Uso de IA:** hecho con Claude; registrado en la sección 10 del informe.

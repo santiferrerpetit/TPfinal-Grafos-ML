@@ -1,6 +1,6 @@
 # Acciones elegidas
 
-30 acciones del S&P 500 más el ETF `SPY` (que replica el S&P 500) para calcular beta y volatilidad de mercado.
+30 acciones del S&P 500 más el ETF `SPY` (que replica el S&P 500) para calcular beta y volatilidad de mercado. Las 31 series descargan completas desde `yfinance` (2516 días hábiles, sin valores faltantes; decisión 12).
 
 ## Criterio
 
@@ -35,4 +35,3 @@
 - Sesgo de supervivencia: son empresas que hoy están en el S&P 500.
 - Los sectores son los actuales (por ejemplo, GOOGL pasó a Comunicaciones en 2018).
 - Solo ~30 de los 435 pares son del mismo sector, así que `mismo_sector` está desbalanceada.
-- Falta confirmar que los 30 tickers descargan completos desde `yfinance`.
