@@ -198,3 +198,15 @@ Formato: una entrada por decisión, la más nueva abajo. Si una decisión se rev
 - **Fecha:** 2026-11-05.
 - **Decisión:** se reemplazó `GrafoConflicto.a_networkx()` por `dibujar()`, que grafica con matplotlib (nodos en círculo calculado con numpy, grosor de arista según ρ, color de nodo según canasta si se pasa `colores`). Por la regla de usar solo numpy, pandas, matplotlib y sklearn, `app/` ya no importa `networkx`; queda únicamente en los tests y en `scripts/comparar_coloreos.py` para contrastar y generar grafos al azar.
 - **Uso de IA:** hecho con Claude; registrar en el informe.
+
+## 28. Visualización del grafo coloreado en el frontend
+
+- **Fecha:** 2026-11-07.
+- **Decisión:** nueva pestaña "Grafo" (`frontend/src/components/GrafoCanastas.tsx`) que dibuja las 30 acciones como nodos pintados por canasta, con una vista "Conflicto" (aristas de `/grafo`) y una vista "Complemento" (aristas de `/complemento`, que solo se pide al activarla). Click en un nodo selecciona la acción y resalta sus aristas; al pasar el mouse sale el ticker, la canasta, el grado y, sobre las aristas, ρ.
+- **Librería:** `d3-force` (solo el cálculo de posiciones) y el dibujo en SVG propio, en vez de `react-force-graph` o `cytoscape`. Con 30 nodos el layout se resuelve de una vez (300 pasos, sin animación), el SVG se integra con los colores del tema y no suma una librería de renderizado.
+- **Peso de la arista:** en Conflicto, el grosor y la opacidad crecen con ρ, normalizado entre θ y 1. En Complemento crecen cuando ρ es *menor* (son las parejas que más diversifican), normalizado entre −1 y θ.
+- **Layouts:** en Conflicto, fuerzas con las aristas como resortes (las que se llevan mal quedan cerca). En Complemento, racimos por canasta: cada canasta es un conjunto independiente en el grafo original, o sea una clique en el complemento, y así se ve. Las aristas entre canastas distintas quedan de fondo.
+- **Ajuste de layout de la página:** el panel central pasó a tener scroll vertical y la pestaña Grafo pide más alto, porque en el alto original el grafo salía diminuto.
+- **Estética tipo Obsidian (agregado):** la simulación de `d3-force` ya no se resuelve de una vez: corre en vivo y se queda con un `alphaTarget` chico (0,012) para que los nodos floten con un vaivén suave; con `prefers-reduced-motion` se frena. Los nodos se arrastran y arrastran a sus vecinos (al soltarlos vuelven los resortes), la rueda hace zoom hacia el cursor, el fondo se desplaza arrastrando, el tamaño del nodo crece con la cantidad de conflictos y al pasar el mouse por un nodo se atenúa todo menos él y sus vecinos. Al cambiar θ o de vista los nodos arrancan desde donde estaban y se acomodan moviéndose. Las posiciones se escriben directo en el SVG (no se re-renderiza React en cada cuadro).
+- **Uso de IA:** hecho con Claude; registrar en el informe.
+
