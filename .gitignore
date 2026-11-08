@@ -22,3 +22,6 @@ data/modelo.joblib
 # Archivos de Claude
 CLAUDE.md
 .claude/
+
+# Capturas para el informe (quedan solo en el disco local)
+capturas para el informe/

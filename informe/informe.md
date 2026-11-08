@@ -513,7 +513,7 @@ Los errores que aparecieron fueron de criterio más que de sintaxis: un caso bor
 ### Limitaciones
 
 - **El modelo mejora poco al baseline** (3 % de MAE con la mejor regresión, y el kNN elegido por validación empata). La mejora viene de los períodos de calma; en crisis, que es cuando más importa diversificar, ningún modelo le gana a `corr_90d`.
-- **Con la fuente `modelo`, el grafo no reacciona a las crisis:** el número de canastas casi no cambia entre calma y crisis (3 a 4), mientras que con `corr_90d` pasa de 7 a 23 en marzo-abril de 2020. La hipótesis de la propuesta ("en crisis aparecen más aristas y hacen falta más canastas") solo se cumple con la correlación histórica (sección 6).
+- **Con la fuente `modelo`, el grafo no reacciona a las crisis:** el número de canastas casi no cambia entre calma y crisis (3 a 4), mientras que con `corr_90d` (θ = 0,5) pasa de 7 en enero de 2020 a 22 el 30 de marzo y 23 a fines de abril. La hipótesis de la propuesta ("en crisis aparecen más aristas y hacen falta más canastas") solo se cumple con la correlación histórica (sección 6).
 - **Las canastas del modelo no superan a las de `corr_90d`.** Parte de la diferencia es un efecto de la comparación a igual θ (grafos más ralos, menos canastas), pero no se resolvió comparando a igual cantidad de canastas.
 - **Universo chico y con sesgos:** 30 acciones que hoy están en el S&P 500 (sesgo de supervivencia); los sectores son los actuales (por ejemplo, GOOGL pasó a Comunicaciones en 2018); solo 28 de los 435 pares son del mismo sector, así que `mismo_sector` está desbalanceada.
 - **Un solo período de test** (2021-2023). Las 33 fechas no son independientes, así que no hay significancia estadística.
