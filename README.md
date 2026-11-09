@@ -3,7 +3,7 @@
 TP integrador de Lógica y Teoría de Grafos. Un modelo de regresión predice la correlación futura (60 días) entre pares de acciones y un coloreo de grafos agrupa las acciones en canastas que no se mueven juntas.
 
 - Descripción completa del problema y del diseño: [PROPUESTA.md](PROPUESTA.md).
-- Informe: [informe/informe.md](informe/informe.md).
+- Informe: [informe/informe.pdf](informe/informe.pdf) (fuente en Markdown: [informe/informe.md](informe/informe.md)).
 - Decisiones de diseño y su justificación: [documentacion/decisiones.md](documentacion/decisiones.md).
 
 ## Estructura
